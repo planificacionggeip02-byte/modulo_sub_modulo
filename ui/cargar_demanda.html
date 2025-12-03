@@ -4,14 +4,14 @@
 <div id="contenedor-formulario"></div>
 
 <script>
-  console.log("🧪 Maqueta Cargar Demanda inicial cargada");
+  console.log("🧪 Maqueta Cargar Demanda inicial cargada (versión parche)");
 
   // ============================
   // 🔧 UTILIDADES DE NORMALIZACIÓN
   // ============================
   // Aquí puedes empezar a escribir tus funciones JS
   // Convierte texto a “Nombre Propio” (cada palabra con inicial mayúscula)
-  function toNombrePropio(str) {
+    function toNombrePropio(str) {
     if (!str) return "";
     return str
       .toLowerCase()
@@ -106,16 +106,11 @@
     // ============================
 
     function renderFormulario(listas = {}) {
-  console.log("🚀 Entrando a renderFormulario con listas:", listas); // eliminar luego esta linea
-  const form = document.createElement("form");
-  form.id = "formCargaDemanda";
-  form.onsubmit = enviarCargaDemanda;
+    console.log("🚀 Entrando a renderFormulario con listas:", listas); // eliminar luego esta linea
+    const form = document.createElement("form");
+    form.id = "formCargaDemanda";
+    form.onsubmit = enviarCargaDemanda;
 
-  console.log("🔍 Verificando constructores:", // eliminar luego las lineas 113 al 117
-    typeof crearCampoTexto,
-    typeof crearCampoNumero,
-    typeof crearCampoSelect
-  );
 
     // ============================
     // 🔷 BLOQUE: Información Personal
@@ -146,7 +141,7 @@
     form.appendChild(cliente);
 
     cliente.appendChild(crearCampoTexto("Cliente", "cliente", true));
-    cliente.appendChild(crearCampoTexto("Rif", "rif", true)); // 👈 campo único, no dividido
+    cliente.appendChild(crearCampoTexto("Rif", "rif", true));
     cliente.appendChild(crearCampoTexto("Calle", "calle", false));
     cliente.appendChild(crearCampoTexto("Edificio", "edificio", false));
     cliente.appendChild(crearCampoTexto("Piso", "piso", false));
@@ -540,22 +535,20 @@ function crearCampoRadioSiNo(labelText, name) {
 // ============================
 // 📨 ENVÍO DEL FORMULARIO (validación + normalización)
 // ============================
-function enviarCargaDemanda(event) {
-  event.preventDefault();
+  function enviarCargaDemanda(event) {
+    event.preventDefault();
 
-  const form = document.getElementById("formCargaDemanda"); // 👈 usa el id nuevo
-  const data = {};
+    const form = document.getElementById("formCargaDemanda");
+    const data = {};
 
-  // Captura básica
-  [...form.elements].forEach(el => {
-    if (!el.name) return;
-    // Radios Sí/No: capturar solo el seleccionado
-    if (el.type === "radio") {
-      if (el.checked) data[el.name] = el.value;
-      return;
-    }
-    data[el.name] = el.value;
-  });
+    [...form.elements].forEach(el => {
+      if (!el.name) return;
+      if (el.type === "radio") {
+        if (el.checked) data[el.name] = el.value;
+        return;
+      }
+      data[el.name] = el.value;
+    });
 
   // Validaciones y normalizaciones específicas
 
@@ -650,24 +643,39 @@ function enviarCargaDemanda(event) {
 
   console.log("🧠 [LOG] Datos normalizados a enviar:", data);
 
-  // Enviar a Apps Script
-  google.script.run
-    .withSuccessHandler(() => console.log("✅ Demanda registrada correctamente"))
-    .withFailureHandler(err => console.error("❌ Error al registrar demanda:", err))
-    .registrarDemanda(data); // 👈 tu función en Apps Script
-}
-
-function mostrarError(msg) {
-  console.error("❌ [VALIDACIÓN]", msg);
-  alert(msg);
-}
-
-    // ============================
-    // 🚀 INICIO: Carga de listas y render
-    // ============================
-    document.addEventListener("DOMContentLoaded", function() {
+    // Enviar a Apps Script - AHORA: llamar cargarDemanda (sin wrappers)
     google.script.run
-      .withSuccessHandler(renderFormulario)
+      .withSuccessHandler(() => {
+        console.log("✅ Demanda registrada correctamente");
+        alert("Demanda registrada correctamente");
+      })
+      .withFailureHandler(err => {
+        console.error("❌ Error al registrar demanda:", err);
+        alert("Error al registrar demanda: " + (err && err.message ? err.message : err));
+      })
+      .cargarDemanda(data); // ← llamada directa a la función del servidor renombrada
+  }
+
+  function mostrarError(msg) {
+    console.error("❌ [VALIDACIÓN]", msg);
+    alert(msg);
+  }
+
+    // ============================
+  // 🚀 INICIALIZACIÓN INMEDIATA (parche)
+  // ============================
+  // Antes: se usaba DOMContentLoaded (no se ejecuta cuando el fragmento se inyecta).
+  // Ahora: llamamos inmediatamente para pedir ListasFijas y renderizar.
+  (function initCargarDemanda() {
+    google.script.run
+      .withSuccessHandler(function(listas) {
+        try {
+          renderFormulario(listas || {});
+        } catch (e) {
+          console.error("❌ Error renderizando formulario:", e);
+          renderFormulario({});
+        }
+      })
       .withFailureHandler(err => {
         console.error("❌ Error al cargar ListasFijas:", err);
         renderFormulario({});
