@@ -84,8 +84,9 @@ function getListasFijas() {
 
 // ============================================================
 // 📋 FUNCIÓN DE REGISTRO (guardar datos en Sheets)
+// RENOMBRADA A cargarDemanda para uniformidad con UI
 // ============================================================
-function registrarUsuario(datos) {
+function cargarDemanda(datos) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName(SHEET_NAME);
 
@@ -97,9 +98,10 @@ function registrarUsuario(datos) {
   sheet.insertRowBefore(2);
   sheet.getRange(2, 1, 1, fila.length).setValues([fila]);
 
-  return "✅ Registro guardado correctamente.";
+  return "✅ Carga de demanda guardada correctamente.";
 }
 
 function logDebug(msg) {
   console.log("🟢 [DEBUG] " + msg);
   Logger.log("🟢 [DEBUG] " + msg);
+}
