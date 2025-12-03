@@ -1,0 +1,224 @@
+<!-- ============================================================
+📁 app.html
+Lógica de interacción de la interfaz (cliente)
+============================================================ -->
+
+console.log("🟢 app.html cargado correctamente");
+
+/**
+ * 🔄 Mostrar módulo (cambia pestañas)
+ */
+function mostrarModulo(modulo) {
+  // Oculta todos los módulos
+  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+
+  // Limpia todos los estados activos del menú
+  document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+  document.querySelectorAll('.sub-menu li').forEach(item => item.classList.remove('active'));
+
+  // Muestra el módulo solicitado
+  const tab = document.getElementById(modulo);
+  if (tab) tab.classList.add('active');
+
+  // 🔄 Reset consistente al cambiar de módulo
+  resetPanelDerecho();
+
+  // Detecta si el módulo tiene un padre
+  const padre = moduloPadre[modulo] || modulo;
+  const link = document.querySelector(`.nav-link[data-module="${padre}"]`);
+}
+
+/**
+ * 📥 Cargar módulo dinámicamente desde Apps Script
+ */
+async function cargarModulo(nombre) {
+  mostrarModulo(nombre);
+  resetPanelDerecho();
+  console.log(`🧠 [LOG] Intentando cargar módulo: ${nombre}`);
+
+  const destinoId = nombre + 'Body';
+  const destino = document.getElementById(destinoId);
+
+  console.log("DestinoId calculado:", destinoId);
+  console.log("Elemento encontrado:", destino);
+
+  if (!destino) {
+    console.error(`❌ [ERROR] No se encontró el contenedor destino: #${destinoId}`);
+    return;
+  }
+
+  destino.innerHTML = '<div style="padding:12px;">Cargando módulo…</div>';
+
+  google.script.run
+    .withSuccessHandler(function (html) {
+      console.log("✅ [CLIENTE] HTML recibido, longitud:", html ? html.length : 0);
+      destino.innerHTML = html;
+
+      // Fuerza ejecución de scripts del fragmento
+      [...destino.querySelectorAll("script")].forEach(function (oldScript) {
+        const newScript = document.createElement("script");
+        if (oldScript.src) {
+          newScript.src = oldScript.src;
+        } else {
+          newScript.textContent = oldScript.textContent;
+        }
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+      });
+
+      console.log("✅ [CLIENTE] Inserción completada.");
+    })
+    .withFailureHandler(function (e) {
+      console.error("❌ [CLIENTE] Error del servidor:", e && e.message ? e.message : e);
+      destino.innerHTML = `<div style="color:#b00020;padding:12px;">Error: ${e.message}</div>`;
+    })
+    .getModuloHTML(nombre); // ← corregido: usa el nombre dinámico
+}
+
+/**
+ * 📥 Cargar submódulo dinámicamente
+ */
+async function cargarSubmodulo(nombreTecnico, nombreVisible) {
+  console.log(`🧠 [LOG] Intentando cargar submódulo: ${nombreTecnico}`);
+
+  // 1. Ocultar imagen de fondo
+  const fondo = document.getElementById("imagenFondo");
+  if (fondo) fondo.style.display = "none";
+
+  // 2. Mostrar título del submódulo
+  const titulo = document.getElementById("submoduloTitulo");
+  if (titulo) {
+    titulo.style.display = "block";
+    titulo.textContent = nombreVisible;
+  }
+
+  // 3. Renderizar contenido en el panel derecho
+  const destino = document.getElementById("submoduloBody");
+  if (!destino) {
+    console.error("❌ [ERROR] No se encontró el contenedor destino: #submoduloBody");
+    return;
+  }
+
+  destino.innerHTML = '<div style="padding:12px;">Cargando submódulo…</div>';
+
+  google.script.run
+    .withSuccessHandler(function (html) {
+      console.log("✅ [CLIENTE] HTML recibido para submódulo:", nombreTecnico);
+      destino.innerHTML = html;
+
+      // Fuerza ejecución de scripts del fragmento
+      [...destino.querySelectorAll("script")].forEach(function (oldScript) {
+        const newScript = document.createElement("script");
+        if (oldScript.src) {
+          newScript.src = oldScript.src;
+        } else {
+          newScript.textContent = oldScript.textContent;
+        }
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+      });
+    })
+    .withFailureHandler(function (e) {
+      console.error("❌ [CLIENTE] Error al cargar submódulo:", e && e.message ? e.message : e);
+      destino.innerHTML = `<div style="color:#b00020;padding:12px;">Error: ${e.message}</div>`;
+    })
+    .getModuloHTML(nombreTecnico); // el servidor ya sabe buscar ui/<nombreTecnico>
+}
+
+/**
+ * 📂 Expandir o contraer módulo lateral con comportamiento acordeón
+ */
+function toggleMenu(element) {
+  const item = element.closest('.nav-item');
+  if (!item) return;
+
+  // 🔒 Cierra todos los demás módulos abiertos
+  document.querySelectorAll('.nav-item.open').forEach(openItem => {
+    if (openItem !== item) {
+      openItem.classList.remove('open');
+    }
+  });
+
+  // 🔓 Alterna el módulo actual (abre/cierra)
+  item.classList.toggle('open');
+}
+
+/**
+ * 📂 Relación de submódulos con su módulo padre
+ */
+const moduloPadre = {
+  registrar_usuario: "ventas",
+  editar_usuario: "ventas",
+  avanzar_casos: "analisis_riesgo_mo",
+  reporte_ar: "analisis_riesgo_mo",
+  rebajar_equipo: "almacen",
+  reporte_alma: "almacen",
+  aprov_servicio: "aprovisionamiento",
+  reporte_apro: "aprovisionamiento",
+  cargar_retiro: "retiro",
+  reporte_reti: "retiro",
+  cambio_plan: "planes",
+  reporte_plan: "planes"
+};
+
+// Actualiza la franja blanca fija con el nombre del módulo
+function actualizarEncabezadoModulo(nombreModulo) {
+  const header = document.getElementById("topHeaderTitle");
+  if (header) {
+    header.textContent = `Módulo: ${nombreModulo}`;
+  }
+}
+
+/**
+ * 🔄 Restaurar panel derecho al cambiar de módulo
+ */
+function resetPanelDerecho() {
+  const fondo = document.getElementById("imagenFondo");
+  const titulo = document.getElementById("submoduloTitulo");
+  const destinoSub = document.getElementById("submoduloBody");
+
+  console.log("[RESET] Restaurando panel derecho...");
+
+  if (fondo) {
+    fondo.style.display = "block";
+    console.log("[RESET] Imagen de fondo visible");
+  } else {
+    console.warn("[RESET] No se encontró #imagenFondo");
+  }
+
+  if (titulo) {
+    titulo.style.display = "none";
+    titulo.textContent = "";
+  } else {
+    console.warn("[RESET] No se encontró #submoduloTitulo");
+  }
+
+  if (destinoSub) {
+    destinoSub.innerHTML = "";
+  } else {
+    console.warn("[RESET] No se encontró #submoduloBody");
+  }
+}
+
+// Escucha clics en módulos padres para actualizar encabezado y resetear panel derecho
+document.querySelectorAll('.nav-link[data-module]').forEach(item => {
+  item.addEventListener('click', () => {
+    const nombreTecnico = item.getAttribute('data-module');
+    const nombreVisible = nombresVisibles[nombreTecnico] || nombreTecnico;
+    actualizarEncabezadoModulo(nombreVisible);
+    resetPanelDerecho();
+    // Opcional: cargarModulo(nombreTecnico);
+  });
+});
+
+// Diccionario de nombres visibles para la franja blanca
+const nombresVisibles = {
+  dashboard: "Dashboard",
+  buscar: "Buscar",
+  ventas: "Ventas",
+  analisis_riesgo_mo: "Análisis de Riesgo",
+  almacen: "Almacén",
+  aprovisionamiento: "Aprovisionamiento",
+  retiro: "Retiro",
+  planes: "Planes",
+  reportes: "Reportes",
+  configuracion: "Configuración"
+};
