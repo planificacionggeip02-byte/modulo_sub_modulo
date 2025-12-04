@@ -178,22 +178,65 @@
     console.log("✅ Bloque Información Servicio completado");   // eliminar luego esta linea
 
     // ============================
-    // 🔷 BOTÓN DE ENVÍO
+    // 🔷 BOTONES DE ACCIÓN
     // ============================
+
+    // 🔷 Botón de envío
     const submitBtn = document.createElement("button");
     submitBtn.type = "submit";
     submitBtn.textContent = "Enviar Demanda";
-    form.appendChild(submitBtn);
+    submitBtn.className = "btn btn-primary";
 
-    // Insertar formulario en el contenedor principal
+    // 🔷 Botón de limpiar
+    const limpiarBtn = document.createElement("button");
+    limpiarBtn.type = "button";
+    limpiarBtn.textContent = "Limpiar";
+    limpiarBtn.className = "btn btn-primary";
+
+    limpiarBtn.addEventListener("click", () => {
+      form.reset(); // limpia campos nativos
+
+      // limpieza total
+      form.querySelectorAll("input, select, textarea").forEach(el => {
+        if (el.tagName === "SELECT") el.selectedIndex = 0;
+        else if (el.type === "checkbox" || el.type === "radio") el.checked = false;
+        else el.value = "";
+
+        // 🔹 Eliminar clases de validación
+        el.classList.remove("is-valid", "is-invalid");
+        el.removeAttribute("aria-invalid");
+
+        // 🔹 Resetear estilos de borde y halo
+        el.style.borderColor = "";
+        el.style.boxShadow = "";
+      });
+
+      // limpiar mensajes de ayuda y error
+      form.querySelectorAll(".help, .error").forEach(el => el.textContent = "");
+
+      // eliminar iconos de validación
+      form.querySelectorAll(".valid-icon, .invalid-icon").forEach(icon => icon.remove());
+
+      // scroll al inicio del área visible
+      const scroller = document.querySelector(".main-content");
+      if (scroller) scroller.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    // 🔷 Contenedor de botones alineados
+    const buttonGroup = document.createElement("div");
+    buttonGroup.className = "form-buttons";
+    buttonGroup.appendChild(submitBtn);
+    buttonGroup.appendChild(limpiarBtn);
+    form.appendChild(buttonGroup);
+
+    // 🔷 Insertar formulario
     const contenedor = document.getElementById("contenedor-formulario");
     contenedor.innerHTML = "";
     contenedor.appendChild(form);
 
-    // Asociar envío
+    // 🔷 Asociar envío
     form.addEventListener("submit", enviarCargaDemanda);
 
-    // 👇 Aquí pegas el log
     console.log("✅ Formulario renderizado y listener de envío asociado");   // eliminar luego esta linea
   }
 
@@ -681,7 +724,7 @@ function crearCampoRadioSiNo(labelText, name) {
         renderFormulario({});
       })
       .getListasFijas();
-  });
+  })();
     </script>
 
       <style>
