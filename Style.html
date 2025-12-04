@@ -12,6 +12,11 @@ Estilos globales de la interfaz Consolidado GPON - GGEIP
   --color-active: #5DADE2;    /* Color activo en menú */
   --color-card: #FAFBFC;      /* Fondo de tarjetas */
   --text-color: #2E86AB;      /* Color principal de texto */
+  --field-border-default: rgba(0,0,0,0.12);
+  --field-border-focus: var(--color-primary);
+  --input-bg: #ffffff;        /* fondo claro para inputs/selects */
+  --control-radius: 8px;
+  --form-gap: 12px;
 }
 
 /* 🔧 Reset y tipografía */
@@ -26,6 +31,7 @@ body {
   background: var(--color-light);
   height: 100vh;
   overflow: hidden;
+  color: #0a2240;
 }
 
 .app-container {
@@ -291,142 +297,247 @@ body {
 Uniformes en todos los submódulos
 ============================ */
 
-/* Contenedor del formulario */
+/* Contenedor del formulario: mantengo la .form por compatibilidad con otros formularios */
 .form {
   display: grid;
   gap: 12px; /* separación entre grupos */
-  font-size: 14px; /* tamaño de letra base */
-  color: var(--text-color); /* color de texto global */
-}
-
-/* Grupo de campo */
-.form-group {
-  display: grid;
-  gap: 6px; /* separación label-input */
-}
-
-.form-group label {
-  font-weight: 600; /* título del campo más visible */
+  grid-template-columns: repeat(2, 1fr); /* 2 columnas por defecto */
+  font-size: 14px;
   color: var(--text-color);
 }
 
-/* Inputs genéricos: texto, número, email, select, fecha */
-.input,
-.select,
-.date,
-.textarea {
+/* Variable para controlar fácilmente el grosor de las etiquetas (negrita) */
+:root {
+  --label-weight: 600; /* cambiar aquí para ajustar el 'negrito' de todos los labels (400,500,600,700) */
+}
+
+/* Muchos submódulos generan HTML con .campo o .form-group.
+   Normalizamos ambos pero SIN forzar que cada .campo ocupe toda la fila. */
+.form-group,
+.campo {
+  display: flex;           /* usar flex para que label + control queden en columna */
+  flex-direction: column;
+  gap: 6px;
   width: 100%;
-  padding: 10px; /* separación interna */
-  border: 1px solid #ccc; /* color línea input */
-  border-radius: 6px; /* esquinas redondeadas */
-  background: #fff;
-  color: var(--text-color);
-  outline: none;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
-}
+  box-sizing: border-box;
 
-.input:focus,
-.select:focus,
-.date:focus,
-.textarea:focus {
-  border-color: var(--color-primary); /* azul principal al foco */
-  box-shadow: 0 0 0 3px rgba(46,134,171,0.15); /* halo suave */
-}
-
-/* Textarea (múltiples líneas) */
-.textarea {
-  min-height: 90px;
-  resize: vertical; /* permite ajustar altura */
-}
-
-/* Radios y checkboxes */
-.choice-group {
-  display: flex;
-  gap: 16px; /* separación entre opciones */
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.choice {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px; /* separación icono-texto */
-  cursor: pointer;
-  color: var(--text-color);
-}
-
-.choice input {
-  appearance: none; /* oculta control nativo */
-  width: 18px;
-  height: 18px;
-  border: 2px solid #555; /* borde inactivo */
-  border-radius: 50%; /* radios circulares */
-  display: inline-block;
+  /* Posicionamiento relativo para permitir colocar el validador (✔/❌) junto al título */
   position: relative;
+  padding-right: 44px; /* espacio a la derecha para el icono validador */
 }
 
-.choice input[type="checkbox"] {
-  border-radius: 4px; /* cuadrado para checkbox */
+/* Etiquetas en azul institucional (uniforme) */
+.form-group label,
+.campo label,
+.campo .label {
+  font-weight: var(--label-weight);
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  display: inline-block;
 }
 
-.choice input:checked {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(46,134,171,0.2);
+/* BLOQUES (fieldsets) que agrupan campos: esto es lo que controla 2-3 columnas.
+   Reglas aplican globalmente a los nombres de clase que usas en JS (.bloque-*) */
+.bloque-personal,
+.bloque-cliente,
+.bloque-servicio {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  gap: 12px !important;
+  align-items: start;
+  width: 100%;
 }
 
-.choice input[type="radio"]:checked::after {
-  content: "";
-  position: absolute;
-  inset: 50% auto auto 50%;
-  width: 8px;
-  height: 8px;
-  background: var(--color-primary); /* punto interno */
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
+/* Cada .campo se considera un grid-item del fieldset y se adapta al espacio disponible.
+   Aseguramos que no haya reglas previas que lo obliguen a ocupar 100% fuera del grid. */
+.bloque-personal > .campo,
+.bloque-cliente > .campo,
+.bloque-servicio > .campo {
+  width: 100%;
+  margin: 0;
 }
 
-.choice input[type="checkbox"]:checked::after {
-  content: "";
-  position: absolute;
-  inset: 50% auto auto 50%;
-  width: 10px;
-  height: 10px;
-  background: var(--color-primary); /* relleno interno */
-  border-radius: 2px;
-  transform: translate(-50%, -50%);
+/* Controles (inputs/selects/textareas): fondo blanco, borde sutil y foco azul.
+   Mantengo selectores amplios para cubrir la mayoría de markups dinámicos. */
+.campo input[type="text"],
+.campo input[type="email"],
+.campo input[type="date"],
+.campo input[inputmode],
+.campo input[type="number"],
+.campo select,
+.campo textarea,
+.form input[type="text"],
+.form select,
+.form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--control-radius);
+  border: 1px solid var(--field-border-default);
+  background: var(--input-bg);
+  color: #0a2240;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .12s ease, box-shadow .12s ease;
 }
 
-/* Mensajes de ayuda y error */
-.help {
-  font-size: 12px;
-  color: #666; /* texto guía */
+/* Focus: azul institucional */
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 4px rgba(46,134,171,0.06);
 }
 
-.error {
-  font-size: 12px;
-  color: #b00020; /* mensaje de error */
-}
+/* ============================
+  1) TELEFONO: INTEGRAR COD + 7 dígitos visualmente en un solo control
+     - el wrapper .telefono-group tendrá el borde y border-radius
+     - el select y el input internos quedarán sin borde para crear un único control visual
+============================ */
 
-/* Botones */
-.btn {
-  display: inline-flex;
+/* TELEFONO: grupo inline (select COD + input) debe ocupar UNA sola celda en la grid,
+   y dentro de esa celda disponer los controles en fila. */
+.telefono-group {
+  display: flex;
+  gap: 0;
   align-items: center;
+
+  /* wrapper con borde común para parecer un único input */
+  border: 1px solid rgba(46,134,171,0.12);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--input-bg);
+}
+
+/* Tamaños para COD y número dentro de .telefono-group (ahora integrados) */
+.telefono-group select {
+  flex: 0 0 110px;
+  max-width: 140px;
+  min-width: 90px;
+  padding: 8px 10px;
+  border: none; /* eliminado borde del select para unificar visualmente */
+  background: transparent;
+  color: #0a2240;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.telefono-group input {
+  flex: 1 1 auto;
+  padding: 8px 10px;
+  border: none; /* eliminado borde del input para unificar visualmente */
+  background: transparent;
+  color: #0a2240;
+}
+
+/* Si el input dentro del wrapper tiene foco, destacar el borde del wrapper */
+.telefono-group input:focus,
+.telefono-group select:focus {
+  outline: none;
+  box-shadow: none;
+}
+.telefono-group:focus-within {
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 4px rgba(46,134,171,0.06);
+}
+
+/* RIF y grupos similares inline */
+.rif-group {
+  display: flex;
   gap: 8px;
-  padding: 10px 16px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background-color 120ms ease, box-shadow 120ms ease;
+  align-items: center;
 }
 
-.btn-primary {
-  background: var(--color-primary); /* azul principal */
+/* ============================
+  2) VALIDADORES (✔️ / ❌) — mover al lado del nombre del input
+     - colocamos .estado como absolute dentro del .campo para que quede al lado del label
+     - soporta las clases .valido / .invalido que tu JS ya aplica
+============================ */
+
+/* El icono validador (span.estado) se posiciona en la esquina superior derecha del .campo,
+   lo que hace que se vea alineado con el label (nombre del input). */
+.campo .estado,
+.form-group .estado {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 18px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* estilos para inputs con validación (tu JS añadirá .valido/.invalido) */
+.campo input.valido,
+.campo select.valido,
+.campo textarea.valido {
+  border-color: #28a745 !important; /* verde moderno */
+  box-shadow: 0 0 0 4px rgba(40,167,69,0.06);
+}
+
+.campo input.invalido,
+.campo select.invalido,
+.campo textarea.invalido {
+  border-color: #b00020 !important; /* rojo error */
+  box-shadow: 0 0 0 4px rgba(176,0,32,0.06);
+}
+
+/* Color del icono de validación según estado (span.estado debe recibir .valido/.invalido) */
+.campo .estado.valido { color: #28a745; }   /* ✔️ verde moderno */
+.campo .estado.invalido { color: #b00020; } /* ❌ rojo */
+
+/* ============================
+  Radios: estilo uniforme y color institucional al seleccionar
+============================ */
+.radio-group { display:flex; gap:16px; align-items:center; }
+.radio-group label { display:inline-flex; align-items:center; gap:8px; cursor:pointer; color:#0a2240; }
+.radio-group input[type="radio"] { display:none; }
+.radio-ui {
+  width:18px; height:18px; border-radius:50%; border:2px solid rgba(46,134,171,0.35);
+  display:inline-flex; align-items:center; justify-content:center; transition:all .12s;
+}
+.radio-group input[type="radio"]:checked + .radio-ui {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(46,134,171,0.12);
+}
+.radio-group input[type="radio"]:checked + .radio-ui::after {
+  content:""; width:8px; height:8px; background:var(--color-primary); border-radius:50%;
+}
+
+/* Botón principal: centrado y compacto */
+.btn-primary,
+form button[type="submit"],
+button.btn-primary {
+  background: var(--color-primary);
   color: #fff;
+  padding: 8px 14px;
+  min-width: 140px;
+  margin: 12px auto 0 auto;
+  display: block;
+  border-radius: 8px;
+  font-weight: 700;
+  text-align: center;
 }
 
-.btn-primary:hover {
-  background: var(--color-dark); /* azul oscuro al hover */
+.form-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.form-buttons .btn {
+  margin: 0;
+}
+
+/* Mensajes */
+.help { font-size:12px; color:#666; }
+.error { font-size:12px; color:#b00020; }
+
+/* Responsive: en pantalla pequeña 1 columna */
+@media (max-width: 900px) {
+  .bloque-personal,
+  .bloque-cliente,
+  .bloque-servicio { grid-template-columns: 1fr !important; }
 }
 
 /* ============================
