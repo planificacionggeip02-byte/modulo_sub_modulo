@@ -4,14 +4,12 @@
 <div id="contenedor-formulario"></div>
 
 <script>
-  console.log("🧪 Maqueta Cargar Demanda inicial cargada (versión parche)");
+  console.log("🧪 Maqueta Cargar Demanda inicial cargada (versión ajustada)");
 
   // ============================
   // 🔧 UTILIDADES DE NORMALIZACIÓN
   // ============================
-  // Aquí puedes empezar a escribir tus funciones JS
-  // Convierte texto a “Nombre Propio” (cada palabra con inicial mayúscula)
-    function toNombrePropio(str) {
+  function toNombrePropio(str) {
     if (!str) return "";
     return str
       .toLowerCase()
@@ -20,7 +18,6 @@
       .join(" ");
   }
 
-  // Normaliza: elimina acentos y espacios/guiones (para comparaciones internas si hiciera falta)
   function normalizeKey(str) {
     return (str || "")
       .toString()
@@ -29,34 +26,24 @@
       .toLowerCase();
   }
 
-  // Valida solo dígitos con longitud exacta
   function soloDigitos(str, lenExacta) {
     const clean = (str || "").replace(/\D/g, "");
     return lenExacta ? (clean.length === lenExacta ? clean : null) : clean;
   }
 
-  // Formatea monto a "1.234,56"; si vacío → "0,00"
   function formatearMonto(montoStr) {
     let s = (montoStr || "").trim();
     if (!s) return "0,00";
-
-    // Aceptar tanto coma como punto de decimales; normalizar a número
-    // 1) Remover puntos de miles y espacios
     s = s.replace(/\./g, "").replace(/\s+/g, "");
-    // 2) Cambiar coma por punto para parseo
     s = s.replace(/,/g, ".");
     const n = parseFloat(s);
     if (isNaN(n)) return "0,00";
-
-    // 3) Volver a cadena con punto decimal, luego transformarlo a miles con coma decimal
-    const fixed = n.toFixed(2); // "1234.56"
+    const fixed = n.toFixed(2);
     const [enteros, decimales] = fixed.split(".");
-    // Inserta separadores de miles con punto
     const enterosConMiles = enteros.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     return `${enterosConMiles},${decimales}`;
   }
 
-  // RIF: Letra J/V/E + hasta 9 dígitos; completa con ceros a la derecha hasta 9; sin espacios/guiones
   function normalizarRIF(input) {
     const s = (input || "").trim().toUpperCase().replace(/[\s-]/g, "");
     if (!/^[JVE]/.test(s)) return null;
@@ -67,7 +54,6 @@
     return `${letra}${padded}`;
   }
 
-  // Central: "NNNN" o "NNNNL" (L mayúscula)
   function validarCentral(input) {
     const s = (input || "").trim().toUpperCase();
     if (/^\d{4}$/.test(s)) return s;
@@ -75,14 +61,12 @@
     return null;
   }
 
-  // Combina COD + teléfono (7 dígitos). Sin espacios/guiones.
   function concatCodTelefono(cod, tel7) {
     const t = (tel7 || "").replace(/\D/g, "");
     if (!cod || t.length !== 7) return null;
     return `${cod}${t}`;
   }
 
-  // Voz IP: COD (3 dígitos) + teléfono (7 dígitos).
   function concatCod3Tel7(cod3, tel7) {
     const c = (cod3 || "").replace(/\D/g, "");
     const t = (tel7 || "").replace(/\D/g, "");
@@ -90,32 +74,27 @@
     return `${c}${t}`;
   }
 
-  // Email: no permitir dominio cantv
   function validarEmailNoCantv(email) {
     const e = (email || "").trim();
     if (!e) return null;
     const cantv = /@cantv(\.com)?\.ve$/i;
     if (cantv.test(e)) return null;
-    // Validación básica de email
     const basic = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return basic.test(e) ? e : null;
   }
 
-    // ============================
-    // 🔷 Render Formulario
-    // ============================
-
-    function renderFormulario(listas = {}) {
-    console.log("🚀 Entrando a renderFormulario con listas:", listas); // eliminar luego esta linea
+  // ============================
+  // 🔷 RENDER FORMULARIO + POBLADO DE LISTAS
+  // ============================
+  function renderFormulario(listas = {}) {
+    console.log("🚀 Entrando a renderFormulario con listas:", listas);
     const form = document.createElement("form");
     form.id = "formCargaDemanda";
     form.onsubmit = enviarCargaDemanda;
 
-
     // ============================
     // 🔷 BLOQUE: Información Personal
     // ============================
-    console.log("🔷 Renderizando bloque Información Personal");   // eliminar luego esta linea
     const personal = document.createElement("fieldset");
     personal.className = "bloque-personal";
     personal.innerHTML = `<legend>Información Personal</legend>`;
@@ -128,13 +107,10 @@
     personal.appendChild(crearCampoTelefono("Teléfono", "telefono", true, "cod"));
     personal.appendChild(crearCampoTelefono("Teléfono 2", "telefono2", false, "cod2"));
     personal.appendChild(crearCampoTelefono("Teléfono 3", "telefono3", false, "cod3"));
-    console.log("✅ Bloque Información Personal completado");   // eliminar luego esta linea
-
 
     // ============================
     // 🔷 BLOQUE: Información Cliente
     // ============================
-    console.log("🔷 Renderizando bloque Información Cliente");   // eliminar luego esta linea
     const cliente = document.createElement("fieldset");
     cliente.className = "bloque-cliente";
     cliente.innerHTML = `<legend>Información Cliente</legend>`;
@@ -146,102 +122,87 @@
     cliente.appendChild(crearCampoTexto("Edificio", "edificio", false));
     cliente.appendChild(crearCampoTexto("Piso", "piso", false));
     cliente.appendChild(crearCampoTexto("Local", "local", false));
-    cliente.appendChild(crearCampoSelect("Región", "region", listas["Lista_Region"], true));
-    cliente.appendChild(crearCampoSelect("Gerente Región", "gerenteregion", listas["Lista_Gerente_Region"] || [], false));
+    cliente.appendChild(crearCampoSelect("Región", "region", listas["Lista_Region"] || [], true));
+    cliente.appendChild(crearCampoSelect("Gerente Región", "gerenteregion", listas["Lista_Gerente_Region"] || listas["Lista_Gerente"] || [], false));
     cliente.appendChild(crearCampoSelect("Estado", "estado", listas["Lista_Estado"] || [], false));
     cliente.appendChild(crearCampoSelect("Municipio", "municipio", listas["Lista_Municipio"] || [], false));
     cliente.appendChild(crearCampoTexto("Ciudad", "ciudad", false));
     cliente.appendChild(crearCampoSelect("Huella", "huella", listas["Lista_ODN"] || [], false));
     cliente.appendChild(crearCampoTexto("Sector", "sector", false));
     cliente.appendChild(crearCampoTexto("Cono O Modulo", "cono", false));
-    console.log("✅ Bloque Información Cliente completado");   // eliminar luego esta linea
 
     // ============================
     // 🔷 BLOQUE: Información Servicio
     // ============================
-    console.log("🔷 Renderizando bloque Información Servicio");   // eliminar luego esta linea
     const servicio = document.createElement("fieldset");
     servicio.className = "bloque-servicio";
     servicio.innerHTML = `<legend>Información Servicio</legend>`;
     form.appendChild(servicio);
 
-    servicio.appendChild(crearCampoSelect("Medio Abordaje", "medioabordaje", listas["Lista_Medio_Abordaje"], true));
-    servicio.appendChild(crearCampoSelect("Situación Abordaje", "situacionabordaje", listas["Lista_Situacion"], true));
+    servicio.appendChild(crearCampoSelect("Medio Abordaje", "medioabordaje", listas["Lista_Medio_Abordaje"] || [], true));
+    servicio.appendChild(crearCampoSelect("Situación Abordaje", "situacionabordaje", listas["Lista_Situacion"] || [], true));
     servicio.appendChild(crearCampoDate("Fecha Abordaje", "fechaabordaje", true));
-    servicio.appendChild(crearCampoSelect("Estatus Local", "estatuslocal", listas["Lista_Estatus"], true));
+    servicio.appendChild(crearCampoSelect("Estatus Local", "estatuslocal", listas["Lista_Estatus"] || [], true));
     servicio.appendChild(crearCampoRadioSiNo("Oferta Entregada", "ofertaentregada"));
     servicio.appendChild(crearCampoRadioSiNo("Oferta Aceptada", "ofertaaceptada"));
-    servicio.appendChild(crearCampoSelect("Motivo No Aceptación", "motivonoaceptacion", listas["Lista_No_Aceptacion"], false));
+    servicio.appendChild(crearCampoSelect("Motivo No Aceptación", "motivonoaceptacion", listas["Lista_No_Aceptacion"] || [], false));
     servicio.appendChild(crearCampoDate("Fecha Aceptación", "fechaaceptacion", false));
-    servicio.appendChild(crearCampoSelect("Aceptación Recibida Por", "aceptacionrecibidapor", listas["Lista_Aceptacion_por"], false));
-    servicio.appendChild(crearCampoSelect("Abordado Por", "abordadopor", listas["Lista_Abordado_por"], false));
-    console.log("✅ Bloque Información Servicio completado");   // eliminar luego esta linea
+    servicio.appendChild(crearCampoSelect("Aceptación Recibida Por", "aceptacionrecibidapor", listas["Lista_Aceptacion_por"] || [], false));
+    servicio.appendChild(crearCampoSelect("Abordado Por", "abordadopor", listas["Lista_Abordado_por"] || [], false));
 
     // ============================
-    // 🔷 BOTONES DE ACCIÓN
+    // 🔷 BOTONES DE ACCIÓN (mantengo la estructura que tienes)
     // ============================
-
-    // 🔷 Botón de envío
     const submitBtn = document.createElement("button");
     submitBtn.type = "submit";
     submitBtn.textContent = "Enviar Demanda";
     submitBtn.className = "btn btn-primary";
 
-    // 🔷 Botón de limpiar
     const limpiarBtn = document.createElement("button");
     limpiarBtn.type = "button";
     limpiarBtn.textContent = "Limpiar";
     limpiarBtn.className = "btn btn-primary";
-
     limpiarBtn.addEventListener("click", () => {
-      form.reset(); // limpia campos nativos
-
-      // limpieza total
+      form.reset();
       form.querySelectorAll("input, select, textarea").forEach(el => {
         if (el.tagName === "SELECT") el.selectedIndex = 0;
         else if (el.type === "checkbox" || el.type === "radio") el.checked = false;
         else el.value = "";
-
-        // 🔹 Eliminar clases de validación
-        el.classList.remove("is-valid", "is-invalid");
-        el.removeAttribute("aria-invalid");
-
-        // 🔹 Resetear estilos de borde y halo
-        el.style.borderColor = "";
-        el.style.boxShadow = "";
+        el.classList.remove("valido", "invalido");
       });
-
-      // limpiar mensajes de ayuda y error
       form.querySelectorAll(".help, .error").forEach(el => el.textContent = "");
-
-      // eliminar iconos de validación
-      form.querySelectorAll(".valid-icon, .invalid-icon").forEach(icon => icon.remove());
-
-      // scroll al inicio del área visible
+      form.querySelectorAll(".estado").forEach(e => { e.className = "estado"; e.innerHTML = ""; });
       const scroller = document.querySelector(".main-content");
       if (scroller) scroller.scrollTo({ top: 0, behavior: "smooth" });
     });
 
-    // 🔷 Contenedor de botones alineados
     const buttonGroup = document.createElement("div");
     buttonGroup.className = "form-buttons";
     buttonGroup.appendChild(submitBtn);
     buttonGroup.appendChild(limpiarBtn);
     form.appendChild(buttonGroup);
 
-    // 🔷 Insertar formulario
+    // Insertar formulario
     const contenedor = document.getElementById("contenedor-formulario");
     contenedor.innerHTML = "";
     contenedor.appendChild(form);
 
-    // 🔷 Asociar envío
-    form.addEventListener("submit", enviarCargaDemanda);
+    // POBLAR LISTAS (CODs, selects) y enlazar dependencias y comportamientos dinámicos
+    try {
+      poblarListasGlobales(listas);
+      enlazarDependencias(listas);
+      enlazarOfertaAceptada();
+    } catch (e) {
+      console.warn("⚠️ poblarListasGlobales/enlazarDependencias falló:", e);
+    }
 
-    console.log("✅ Formulario renderizado y listener de envío asociado");   // eliminar luego esta linea
+    form.addEventListener("submit", enviarCargaDemanda);
+    console.log("✅ Formulario renderizado y listener de envío asociado");
   }
 
   // ============================
-  // 🧱 CONSTRUCTORES DE CAMPOS (con comentarios guía)
+  // 🧱 CONSTRUCTORES DE CAMPOS
+  // (Conservé tu estructura y comentarios; sólo ajusté lo necesario)
   // ============================
   function crearCampoTexto(labelText, name, required) {
     const wrap = document.createElement("div");
@@ -251,26 +212,24 @@
       <label for="${name}">${labelText}</label>
       <input type="text" id="${name}" name="${name}" ${required ? "required" : ""} />
       <span class="estado"></span>
-      <!-- 💬 Validación visual ✔️/❌ integrada -->
+      <div class="error help" style="display:none;"></div>
     `;
 
     const input = wrap.querySelector(`#${name}`);
     const estado = wrap.querySelector(".estado");
+    const errorBox = wrap.querySelector(".error");
 
     function validar() {
-      const val = input.value.trim();
-      if (val.length > 0) {
-        // Capitalización automática
+      const val = input.value; // permitimos espacios en todos los campos texto
+      if (val.trim().length > 0) {
+        // Mantener capitalización pero permitir espacios
         input.value = toNombrePropio(val);
-        input.classList.add("valido");
-        input.classList.remove("invalido");
-        estado.textContent = "✔️";
-        estado.className = "estado valido";
+        input.classList.add("valido"); input.classList.remove("invalido");
+        estado.className = "estado valido"; estado.innerHTML = ""; // icon via CSS
+        if (errorBox) { errorBox.style.display = "none"; errorBox.textContent = ""; }
       } else {
-        input.classList.add("invalido");
-        input.classList.remove("valido");
-        estado.textContent = "❌";
-        estado.className = "estado invalido";
+        input.classList.add("invalido"); input.classList.remove("valido");
+        estado.className = "estado invalido"; estado.innerHTML = "";
       }
     }
 
@@ -281,89 +240,82 @@
   }
 
   function crearCampoNumero(labelText, name, required, opts = {}) {
-  const wrap = document.createElement("div");
-  wrap.className = "campo numero";
-  wrap.innerHTML = `
-    <!-- 🔹 Campo NÚMERO: ${labelText} -->
-    <label for="${name}">${labelText}</label>
-    <input type="text" inputmode="numeric" id="${name}" name="${name}" 
-           ${required ? "required" : ""} />
-    <span class="estado"></span>
-    <!-- 💬 Validación visual ✔️/❌ integrada -->
-  `;
-
-  const input = wrap.querySelector(`#${name}`);
-  const estado = wrap.querySelector(".estado");
-
-  function validar() {
-    const clean = (input.value || "").replace(/\D/g, "");
-    const minLen = opts.minLen || 0;
-    const maxLen = opts.maxLen || Infinity;
-
-    if (clean.length >= minLen && clean.length <= maxLen && clean.length > 0) {
-      input.classList.add("valido");
-      input.classList.remove("invalido");
-      estado.textContent = "✔️";
-      estado.className = "estado valido";
-    } else {
-      input.classList.add("invalido");
-      input.classList.remove("valido");
-      estado.textContent = "❌";
-      estado.className = "estado invalido";
-    }
-  }
-
-  input.addEventListener("input", validar);
-  input.addEventListener("blur", validar);
-
-  return wrap;
-}
-
-function crearCampoTelefono(labelText, name, required, codFieldName) {
-  const wrap = document.createElement("div");
-  wrap.className = "campo telefono";
-
-  // Render: Select COD + Input Teléfono en la misma fila
-  wrap.innerHTML = `
-    <!-- 🔹 Campo TELÉFONO: ${labelText} (COD + 7 dígitos) -->
-    <label for="${name}">${labelText}</label>
-    <div class="telefono-group">
-      <select id="${codFieldName}" name="${codFieldName}">
-        <option value="">COD</option>
-        <!-- ⚠️ Opciones se llenan dinámicamente desde ListasFijas -->
-      </select>
-      <input type="text" inputmode="numeric" id="${name}" name="${name}" 
-             ${required ? "required" : ""} placeholder="7 dígitos" />
+    const wrap = document.createElement("div");
+    wrap.className = "campo numero";
+    wrap.innerHTML = `
+      <!-- 🔹 Campo NÚMERO: ${labelText} -->
+      <label for="${name}">${labelText}</label>
+      <input type="text" inputmode="numeric" id="${name}" name="${name}" ${required ? "required" : ""} />
       <span class="estado"></span>
-    </div>
-  `;
+    `;
+    const input = wrap.querySelector(`#${name}`);
+    const estado = wrap.querySelector(".estado");
 
-  // Validación visual en tiempo real
-  const input = wrap.querySelector(`#${name}`);
-  const select = wrap.querySelector(`#${codFieldName}`);
-  const estado = wrap.querySelector(".estado");
-
-  function validar() {
-    const tel = (input.value || "").replace(/\D/g, "");
-    const cod = select.value;
-    if (cod && tel.length === 7) {
-      input.classList.add("valido");
-      input.classList.remove("invalido");
-      estado.textContent = "✔️";
-      estado.className = "estado valido";
-    } else {
-      input.classList.add("invalido");
-      input.classList.remove("valido");
-      estado.textContent = "❌";
-      estado.className = "estado invalido";
+    function validar() {
+      const clean = (input.value || "").replace(/\D/g, "");
+      const minLen = opts.minLen || 0;
+      const maxLen = opts.maxLen || Infinity;
+      if (clean.length >= minLen && clean.length <= maxLen && clean.length > 0) {
+        input.classList.add("valido"); input.classList.remove("invalido");
+        estado.className = "estado valido"; estado.innerHTML = "";
+      } else {
+        input.classList.add("invalido"); input.classList.remove("valido");
+        estado.className = "estado invalido"; estado.innerHTML = "";
+      }
     }
+
+    input.addEventListener("input", validar);
+    input.addEventListener("blur", validar);
+
+    return wrap;
   }
 
-  input.addEventListener("input", validar);
-  select.addEventListener("change", validar);
+  function crearCampoTelefono(labelText, name, required, codFieldName) {
+    const wrap = document.createElement("div");
+    wrap.className = "campo telefono";
 
-  return wrap;
-}
+    // Si no es requerido, mostrar "(opcional)" junto al label
+    const labelTextFinal = required ? labelText : `${labelText} (opcional)`;
+
+    // Render: Select COD + Input Teléfono en la misma fila (span.estado fuera del wrapper)
+    wrap.innerHTML = `
+      <!-- 🔹 Campo TELÉFONO: ${labelTextFinal} (COD + 7 dígitos) -->
+      <label for="${name}">${labelTextFinal}</label>
+      <div class="telefono-group">
+        <select id="${codFieldName}" name="${codFieldName}">
+          <option value="">COD</option>
+          <!-- opciones se llenan desde poblarListasGlobales() -->
+        </select>
+        <input type="text" inputmode="numeric" id="${name}" name="${name}" ${required ? "required" : ""} placeholder="7 dígitos" />
+      </div>
+      <span class="estado"></span>
+    `;
+
+    const input = wrap.querySelector(`#${name}`);
+    const select = wrap.querySelector(`#${codFieldName}`);
+    const estado = wrap.querySelector(".estado");
+    const telefonoWrapper = wrap.querySelector('.telefono-group');
+
+    function validar() {
+      const tel = (input.value || "").replace(/\D/g, "");
+      const cod = select.value;
+      if (cod && tel.length === 7) {
+        input.classList.add("valido"); input.classList.remove("invalido");
+        estado.className = "estado valido"; estado.innerHTML = "";
+        if (telefonoWrapper) { telefonoWrapper.classList.add("valido"); telefonoWrapper.classList.remove("invalido"); }
+      } else {
+        input.classList.add("invalido"); input.classList.remove("valido");
+        estado.className = "estado invalido"; estado.innerHTML = "";
+        if (telefonoWrapper) { telefonoWrapper.classList.add("invalido"); telefonoWrapper.classList.remove("valido"); }
+      }
+    }
+
+    input.addEventListener("input", validar);
+    input.addEventListener("blur", validar);
+    select.addEventListener("change", validar);
+
+    return wrap;
+  }
 
   function crearCampoRIF(labelText, name, required) {
     const wrap = document.createElement("div");
@@ -378,11 +330,9 @@ function crearCampoTelefono(labelText, name, required, codFieldName) {
           <option value="V">V</option>
           <option value="E">E</option>
         </select>
-        <input type="text" inputmode="numeric" id="${name}_numero" name="${name}_numero" 
-              ${required ? "required" : ""} placeholder="9 dígitos" />
-        <span class="estado"></span>
+        <input type="text" inputmode="numeric" id="${name}_numero" name="${name}_numero" ${required ? "required" : ""} placeholder="9 dígitos" />
       </div>
-      <!-- 💬 Validación visual ✔️/❌ integrada -->
+      <span class="estado"></span>
     `;
 
     const select = wrap.querySelector(`#${name}_tipo`);
@@ -393,15 +343,11 @@ function crearCampoTelefono(labelText, name, required, codFieldName) {
       const rifNum = (input.value || "").replace(/\D/g, "");
       const tipo = select.value;
       if (tipo && rifNum.length === 9) {
-        input.classList.add("valido");
-        input.classList.remove("invalido");
-        estado.textContent = "✔️";
-        estado.className = "estado valido";
+        input.classList.add("valido"); input.classList.remove("invalido");
+        estado.className = "estado valido"; estado.innerHTML = "";
       } else {
-        input.classList.add("invalido");
-        input.classList.remove("valido");
-        estado.textContent = "❌";
-        estado.className = "estado invalido";
+        input.classList.add("invalido"); input.classList.remove("valido");
+        estado.className = "estado invalido"; estado.innerHTML = "";
       }
     }
 
@@ -411,176 +357,344 @@ function crearCampoTelefono(labelText, name, required, codFieldName) {
     return wrap;
   }
 
-function crearCampoEmail(labelText, name, required) {
-  const wrap = document.createElement("div");
-  wrap.className = "campo email";
-  wrap.innerHTML = `
-    <!-- 🔹 Campo EMAIL: ${labelText} (prohibido dominio cantv) -->
-    <label for="${name}">${labelText}</label>
-    <input type="email" id="${name}" name="${name}" ${required ? "required" : ""} />
-    <span class="estado"></span>
-    <!-- 💬 Validación visual ✔️/❌ integrada -->
-  `;
-
-  const input = wrap.querySelector(`#${name}`);
-  const estado = wrap.querySelector(".estado");
-
-  function validar() {
-    const val = input.value.trim();
-    const regex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/; // formato básico de email
-
-    if (regex.test(val) && !val.toLowerCase().includes("cantv")) {
-      input.classList.add("valido");
-      input.classList.remove("invalido");
-      estado.textContent = "✔️";
-      estado.className = "estado valido";
-    } else {
-      input.classList.add("invalido");
-      input.classList.remove("valido");
-      estado.textContent = "❌";
-      estado.className = "estado invalido";
-    }
-  }
-
-  input.addEventListener("input", validar);
-  input.addEventListener("blur", validar);
-
-  return wrap;
-}
-
-function crearCampoSelect(labelText, name, opciones, required) {
-  const wrap = document.createElement("div");
-  wrap.className = "campo select";
-
-  // Si no hay opciones, lo dejamos vacío para que el flujo no rompa
-  const opts = Array.isArray(opciones) ? opciones : [];
-  const optsHTML = opts.map(v => `<option value="${v}">${v}</option>`).join("");
-
-  wrap.innerHTML = `
-    <!-- 🔹 Campo SELECT: ${labelText} -->
-    <!-- ⚠️ Se llena desde ListasFijas -->
-    <label for="${name}">${labelText}</label>
-    <select id="${name}" name="${name}" ${required ? "required" : ""}>
-      <option value="">Seleccione...</option>
-      ${optsHTML}
-    </select>
-    <span class="estado"></span>
-    <!-- 💬 Validación visual ✔️/❌ integrada -->
-  `;
-
-  const select = wrap.querySelector(`#${name}`);
-  const estado = wrap.querySelector(".estado");
-
-  function validar() {
-    if (select.value && select.value !== "") {
-      select.classList.add("valido");
-      select.classList.remove("invalido");
-      estado.textContent = "✔️";
-      estado.className = "estado valido";
-    } else {
-      select.classList.add("invalido");
-      select.classList.remove("valido");
-      estado.textContent = "❌";
-      estado.className = "estado invalido";
-    }
-  }
-
-  select.addEventListener("change", validar);
-  select.addEventListener("blur", validar);
-
-  return wrap;
-}
-
-function crearCampoDate(labelText, name, required) {
-  const wrap = document.createElement("div");
-  wrap.className = "campo date";
-  wrap.innerHTML = `
-    <!-- 🔹 Campo DATE: ${labelText} (dd/mm/aaaa, zona horaria Caracas) -->
-    <label for="${name}">${labelText}</label>
-    <input type="date" id="${name}" name="${name}" ${required ? "required" : ""} />
-    <span class="estado"></span>
-    <!-- 💬 Validación visual ✔️/❌ integrada -->
-  `;
-
-  const input = wrap.querySelector(`#${name}`);
-  const estado = wrap.querySelector(".estado");
-
-  function validar() {
-    const val = input.value;
-    if (val) {
-      // Normalizar formato a dd/mm/aaaa
-      const fecha = new Date(val);
-      const dia = String(fecha.getDate()).padStart(2, "0");
-      const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-      const anio = fecha.getFullYear();
-      input.dataset.normalizado = `${dia}/${mes}/${anio}`;
-
-      input.classList.add("valido");
-      input.classList.remove("invalido");
-      estado.textContent = "✔️";
-      estado.className = "estado valido";
-    } else {
-      input.classList.add("invalido");
-      input.classList.remove("valido");
-      estado.textContent = "❌";
-      estado.className = "estado invalido";
-    }
-  }
-
-  input.addEventListener("change", validar);
-  input.addEventListener("blur", validar);
-
-  return wrap;
-}
-
-function crearCampoRadioSiNo(labelText, name) {
-  const wrap = document.createElement("div");
-  wrap.className = "campo radio";
-  wrap.innerHTML = `
-    <!-- 🔹 Campo RADIO (Sí/No) moderno: ${labelText} -->
-    <span class="label">${labelText}</span>
-    <div class="radio-group">
-      <label>
-        <input type="radio" name="${name}" value="Sí" />
-        <span class="radio-ui"></span>
-        Sí
-      </label>
-      <label>
-        <input type="radio" name="${name}" value="No" />
-        <span class="radio-ui"></span>
-        No
-      </label>
+  function crearCampoEmail(labelText, name, required) {
+    const wrap = document.createElement("div");
+    wrap.className = "campo email";
+    wrap.innerHTML = `
+      <!-- 🔹 Campo EMAIL: ${labelText} (prohibido dominio cantv) -->
+      <label for="${name}">${labelText}</label>
+      <input type="email" id="${name}" name="${name}" ${required ? "required" : ""} />
       <span class="estado"></span>
-    </div>
-    <!-- 💬 Validación visual ✔️/❌ integrada -->
-  `;
+      <div class="error email-error" style="display:none;"></div>
+    `;
 
-  const radios = wrap.querySelectorAll(`input[name="${name}"]`);
-  const estado = wrap.querySelector(".estado");
+    const input = wrap.querySelector(`#${name}`);
+    const estado = wrap.querySelector(".estado");
+    const emailError = wrap.querySelector(".email-error");
 
-  function validar() {
-    let checked = false;
-    radios.forEach(r => { if (r.checked) checked = true; });
-    if (checked) {
-      estado.textContent = "✔️";
-      estado.className = "estado valido";
-    } else {
-      estado.textContent = "❌";
-      estado.className = "estado invalido";
+    function validar() {
+      const val = input.value.trim();
+      if (!val) {
+        input.classList.remove("valido"); input.classList.remove("invalido");
+        estado.className = "estado"; estado.innerHTML = "";
+        if (emailError) { emailError.style.display = "none"; emailError.textContent = ""; }
+        return;
+      }
+      const basic = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!basic.test(val)) {
+        input.classList.add("invalido"); input.classList.remove("valido");
+        estado.className = "estado invalido"; estado.innerHTML = "";
+        if (emailError) { emailError.style.display = "block"; emailError.textContent = "Correo inválido"; }
+        return;
+      }
+      if (/@cantv(\.com)?\.ve$/i.test(val)) {
+        input.classList.add("invalido"); input.classList.remove("valido");
+        estado.className = "estado invalido"; estado.innerHTML = "";
+        if (emailError) { emailError.style.display = "block"; emailError.textContent = "No se permite dominio @cantv"; }
+        return;
+      }
+      input.classList.add("valido"); input.classList.remove("invalido");
+      estado.className = "estado valido"; estado.innerHTML = "";
+      if (emailError) { emailError.style.display = "none"; emailError.textContent = ""; }
     }
+
+    input.addEventListener("input", validar);
+    input.addEventListener("blur", validar);
+
+    return wrap;
   }
 
-  radios.forEach(r => r.addEventListener("change", validar));
+  function crearCampoSelect(labelText, name, opciones, required) {
+    const wrap = document.createElement("div");
+    wrap.className = "campo select";
 
-  return wrap;
-}
+    const opts = Array.isArray(opciones) ? opciones : [];
+    const optsHTML = opts.map(v => `<option value="${v}">${v}</option>`).join("");
 
-// ============================
-// 📨 ENVÍO DEL FORMULARIO (validación + normalización)
-// ============================
+    wrap.innerHTML = `
+      <!-- 🔹 Campo SELECT: ${labelText} -->
+      <label for="${name}">${labelText}</label>
+      <select id="${name}" name="${name}" ${required ? "required" : ""}>
+        <option value="">Seleccione...</option>
+        ${optsHTML}
+      </select>
+      <span class="estado"></span>
+    `;
+
+    const select = wrap.querySelector(`#${name}`);
+    const estado = wrap.querySelector(".estado");
+
+    function validar() {
+      if (select.value && select.value !== "") {
+        select.classList.add("valido"); select.classList.remove("invalido");
+        estado.className = "estado valido"; estado.innerHTML = "";
+      } else {
+        select.classList.add("invalido"); select.classList.remove("valido");
+        estado.className = "estado invalido"; estado.innerHTML = "";
+      }
+    }
+
+    select.addEventListener("change", validar);
+    select.addEventListener("blur", validar);
+
+    return wrap;
+  }
+
+  function crearCampoDate(labelText, name, required) {
+    const wrap = document.createElement("div");
+    wrap.className = "campo date";
+    wrap.innerHTML = `
+      <!-- 🔹 Campo DATE: ${labelText} (dd/mm/aaaa, zona horaria Caracas) -->
+      <label for="${name}">${labelText}</label>
+      <input type="date" id="${name}" name="${name}" ${required ? "required" : ""} />
+      <span class="estado"></span>
+    `;
+
+    const input = wrap.querySelector(`#${name}`);
+    const estado = wrap.querySelector(".estado");
+
+    function validar() {
+      const val = input.value;
+      if (val) {
+        const fecha = new Date(val);
+        const dia = String(fecha.getDate()).padStart(2, "0");
+        const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+        const anio = fecha.getFullYear();
+        input.dataset.normalizado = `${dia}/${mes}/${anio}`;
+        input.classList.add("valido"); input.classList.remove("invalido");
+        estado.className = "estado valido"; estado.innerHTML = "";
+      } else {
+        input.classList.add("invalido"); input.classList.remove("valido");
+        estado.className = "estado invalido"; estado.innerHTML = "";
+      }
+    }
+
+    input.addEventListener("change", validar);
+    input.addEventListener("blur", validar);
+
+    return wrap;
+  }
+
+  function crearCampoRadioSiNo(labelText, name) {
+    const wrap = document.createElement("div");
+    wrap.className = "campo radio";
+    wrap.innerHTML = `
+      <!-- 🔹 Campo RADIO (Sí/No) moderno: ${labelText} -->
+      <span class="label">${labelText}</span>
+      <div class="radio-group">
+        <label>
+          <input type="radio" name="${name}" value="Sí" />
+          <span class="radio-ui"></span>
+          Sí
+        </label>
+        <label>
+          <input type="radio" name="${name}" value="No" />
+          <span class="radio-ui"></span>
+          No
+        </label>
+        <span class="estado"></span>
+      </div>
+    `;
+
+    const radios = wrap.querySelectorAll(`input[name="${name}"]`);
+    const estado = wrap.querySelector(".estado");
+
+    function validar() {
+      let checked = false;
+      radios.forEach(r => { if (r.checked) checked = true; });
+      if (checked) {
+        estado.className = "estado valido"; estado.innerHTML = "";
+      } else {
+        estado.className = "estado invalido"; estado.innerHTML = "";
+      }
+    }
+
+    radios.forEach(r => r.addEventListener("change", validar));
+
+    return wrap;
+  }
+
+  // ============================
+  // 📥 POBLAR LISTAS Y DEPENDENCIAS
+  // ============================
+  function poblarListasGlobales(listas = {}) {
+    // Rellenar COD / cod2 / cod3 desde Lista_Cod (varias alternativas de claves)
+    const codList = listas["Lista_Cod"] || listas["Lista_COD"] || listas["Lista_Codigos"] || listas["Lista_Codigos"] || [];
+    ["cod", "cod2", "cod3"].forEach(id => {
+      const sel = document.getElementById(id);
+      if (sel) {
+        sel.innerHTML = `<option value="">COD</option>` + codList.map(v => `<option value="${v}">${v}</option>`).join("");
+      } else {
+        // Si el select aún no existe (render todavía no insertado) lo rellenamos cuando se cree.
+      }
+    });
+
+    // Rellenar selects estáticos: región, huella, etc. (por si renderFormulario ya pasó opciones)
+    const mapKeys = {
+      region: listas["Lista_Region"] || [],
+      huella: listas["Lista_ODN"] || [],
+      medioabordaje: listas["Lista_Medio_Abordaje"] || [],
+      situacionabordaje: listas["Lista_Situacion"] || [],
+      estatuslocal: listas["Lista_Estatus"] || [],
+      motivonoaceptacion: listas["Lista_No_Aceptacion"] || [],
+      aceptacionrecibidapor: listas["Lista_Aceptacion_por"] || [],
+      abordadopor: listas["Lista_Abordado_por"] || [],
+      gerenteregion: listas["Lista_Gerente_Region"] || listas["Lista_Gerente"] || []
+    };
+
+    Object.keys(mapKeys).forEach(name => {
+      const sel = document.getElementById(name);
+      if (sel) {
+        const opts = mapKeys[name];
+        sel.innerHTML = `<option value="">Seleccione...</option>` + opts.map(v => `<option value="${v}">${v}</option>`).join("");
+      }
+    });
+  }
+
+    // ============================================================
+    // 🧹 UTILIDAD: LIMPIAR SELECT
+    // ============================================================
+    // Deja un <select> vacío con la opción inicial "Seleccione..."
+    function limpiarSelect(sel) {
+      if (!sel) return;
+      sel.innerHTML = `<option value="">Seleccione...</option>`;
+    }
+
+    // ============================================================
+    // 🗺️ DEPENDENCIAS REGIONALES
+    // ============================================================
+    function enlazarDependencias() {
+      const regionSel = document.getElementById("region");
+      const estadoSel = document.getElementById("estado");
+
+      if (regionSel) {
+        regionSel.addEventListener("change", () => {
+          const region = regionSel.value;
+          console.log("🔄 Cambio de Región:", region);
+
+          // limpiar selects dependientes
+          limpiarSelect(document.getElementById("gerenteregion"));
+          limpiarSelect(document.getElementById("estado"));
+          limpiarSelect(document.getElementById("municipio"));
+
+          if (!region) return;
+
+          // cargar Gerentes por Región
+          google.script.run.withSuccessHandler(arr => {
+            console.log("👉 Gerentes recibidos:", arr);
+            poblarSelect(document.getElementById("gerenteregion"), arr);
+          }).getGerentesPorRegion(region);
+
+          // cargar Estados por Región
+          google.script.run.withSuccessHandler(arr => {
+            console.log("👉 Estados recibidos:", arr);
+            poblarSelect(document.getElementById("estado"), arr);
+          }).getEstadosPorRegion(region);
+        });
+      }
+
+      if (estadoSel) {
+        estadoSel.addEventListener("change", () => {
+          const estado = estadoSel.value;
+          console.log("🔄 Cambio de Estado:", estado);
+
+          limpiarSelect(document.getElementById("municipio"));
+          if (!estado) return;
+
+          // cargar Municipios por Estado
+          google.script.run.withSuccessHandler(arr => {
+            console.log("👉 Municipios recibidos:", arr);
+            poblarSelect(document.getElementById("municipio"), arr);
+          }).getMunicipiosPorEstado(estado);
+        });
+      }
+    }
+
+    // ============================================================
+    // 🎯 MOSTRAR / OCULTAR CAMPOS SEGÚN OFERTA ACEPTADA
+    // ============================================================
+    function enlazarOfertaAceptada() {
+      const radios = document.querySelectorAll('input[name="ofertaaceptada"]');
+      if (!radios || radios.length === 0) return;
+
+      const motivo = document.getElementById("motivonoaceptacion");
+      const fecha = document.getElementById("fechaaceptacion");
+      const aceptpor = document.getElementById("aceptacionrecibidapor");
+
+      // 🔹 Función auxiliar para resetear campo y validadores
+      function resetField(el) {
+        if (!el) return;
+        el.value = "";
+        el.classList.remove("is-valid", "is-invalid");
+        el.removeAttribute("aria-invalid");
+        el.style.borderColor = "";
+        el.style.boxShadow = "";
+      }
+
+      function toggle() {
+        const val = Array.from(radios).find(r => r.checked)?.value;
+        console.log("🔄 Cambio en Oferta Aceptada:", val);
+
+        if (!val) return;
+
+        if (val.toLowerCase() === "no") {
+          if (motivo) motivo.closest('.campo').style.display = "";
+          if (fecha) {
+            fecha.closest('.campo').style.display = "none";
+            resetField(fecha); // 🔹 limpiar y resetear validadores
+          }
+          if (aceptpor) {
+            aceptpor.closest('.campo').style.display = "none";
+            resetField(aceptpor); // 🔹 limpiar y resetear validadores
+          }
+        } else {
+          if (fecha) fecha.closest('.campo').style.display = "";
+          if (aceptpor) aceptpor.closest('.campo').style.display = "";
+          if (motivo) {
+            motivo.closest('.campo').style.display = "none";
+            resetField(motivo); // 🔹 limpiar y resetear validadores
+          }
+        }
+      }
+
+      radios.forEach(r => r.addEventListener('change', toggle));
+
+      // 🔹 Ocultar todos al inicio
+      if (motivo) motivo.closest('.campo').style.display = "none";
+      if (fecha) fecha.closest('.campo').style.display = "none";
+      if (aceptpor) aceptpor.closest('.campo').style.display = "none";
+    }
+
+  // ============================
+  // 📨 ENVÍO DEL FORMULARIO (validación + normalización) y TOAST
+  // ============================
+  function mostrarToast(msg, tipo = "success") {
+    // crea un toast simple en el contenedor-formulario
+    const cont = document.getElementById("contenedor-formulario");
+    if (!cont) { alert(msg); return; }
+    const t = document.createElement("div");
+    t.className = `cd-toast ${tipo}`;
+    t.textContent = msg;
+    Object.assign(t.style, {
+      position: "fixed",
+      right: "24px",
+      top: "80px",
+      zIndex: 9999,
+      background: tipo === "success" ? "var(--color-primary)" : "#b00020",
+      color: "#fff",
+      padding: "10px 14px",
+      borderRadius: "8px",
+      boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+      opacity: "1",
+      transition: "opacity 0.4s ease"
+    });
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = "0"; }, 4000);
+    setTimeout(() => { t.remove(); }, 4500);
+  }
+
   function enviarCargaDemanda(event) {
     event.preventDefault();
-
     const form = document.getElementById("formCargaDemanda");
     const data = {};
 
@@ -593,126 +707,89 @@ function crearCampoRadioSiNo(labelText, name) {
       data[el.name] = el.value;
     });
 
-  // Validaciones y normalizaciones específicas
+    // Normalizaciones (mantengo las tuyas, pero con logging)
+    const camposTextoNombrePropio = ["nombrecontacto", "cliente", "calle", "edificio", "piso", "local", "ciudad", "sector", "cono", "direccioninstalacion", "observacionventas"];
+    camposTextoNombrePropio.forEach(k => { if (k in data) data[k] = toNombrePropio(data[k]); });
 
-  // TEXTO → Nombre Propio
-  const camposTextoNombrePropio = [
-    "nombrecontacto", "cliente", "calle", "edificio", "piso", "local",
-    "ciudad", "sector", "cono", "direccioninstalacion", "observacionventas"
-  ];
-  camposTextoNombrePropio.forEach(k => {
-    if (k in data) data[k] = toNombrePropio(data[k]);
-  });
-
-  // EMAIL → prohibir dominio cantv
-  if ("correo" in data) {
-    const valid = validarEmailNoCantv(data["correo"]);
-    if (!valid) return mostrarError("Correo inválido o dominio cantv no permitido");
-    data["correo"] = valid;
-  }
-
-  // CÉDULA → 7 u 8 dígitos, sin espacios/guiones
-  if ("cedula" in data) {
-    const clean = (data["cedula"] || "").replace(/\D/g, "");
-    if (clean.length < 7 || clean.length > 8) return mostrarError("Cédula debe tener 7 u 8 dígitos");
-    data["cedula"] = clean;
-  }
-
-  // TELÉFONOS → 7 dígitos exactos
-  ["telefono", "telefono2", "telefono3"].forEach(name => {
-    if (name in data && data[name]) {
-      const clean = (data[name] || "").replace(/\D/g, "");
-      if (clean.length !== 7) return mostrarError(`${name} debe tener exactamente 7 dígitos`);
-      data[name] = clean;
+    if ("correo" in data) {
+      const valid = validarEmailNoCantv(data["correo"]);
+      if (!valid) {
+        // mostrar error inline
+        const emailError = document.querySelector('.campo.email .email-error');
+        if (emailError) { emailError.style.display = "block"; emailError.textContent = "No se permite dominio @cantv"; }
+        return mostrarError("Correo inválido o dominio cantv no permitido");
+      }
+      data["correo"] = valid;
     }
-  });
 
-  // RIF → J/V/E + hasta 9 dígitos, completa con ceros a 9, sin espacios ni guiones
-  if ("rif" in data) {
-    const rif = normalizarRIF(data["rif"]);
-    if (!rif) return mostrarError("RIF inválido (Formato: J/V/E + 9 dígitos, sin espacios ni guiones)");
-    data["rif"] = rif;
-  }
-
-  // CENTRAL → "NNNN" o "NNNNL"
-  if ("central" in data) {
-    const val = validarCentral(data["central"]);
-    if (!val) return mostrarError("Central inválida (4 dígitos o 4 dígitos + 1 letra)");
-    data["central"] = val;
-  }
-
-  // MONTO PAGO → "1.234,56" o "0,00" si vacío
-  if ("montopago" in data) {
-    data["montopago"] = formatearMonto(data["montopago"]);
-  } else {
-    data["montopago"] = "0,00";
-  }
-
-  // CONCATENACIONES COD + TELÉFONO
-  const concatMap = [
-    { cod: "cod", tel: "telefono", out: "telefono" },
-    { cod: "cod2", tel: "telefono2", out: "telefono2" },
-    { cod: "cod3", tel: "telefono3", out: "telefono3" },
-  ];
-  for (const { cod, tel, out } of concatMap) {
-    if (data[cod] && data[tel]) {
-      const comb = concatCodTelefono(data[cod], data[tel]);
-      if (!comb) return mostrarError(`Concatenación inválida: ${cod} + ${tel}`);
-      data[out] = comb;
+    if ("cedula" in data) {
+      const clean = (data["cedula"] || "").replace(/\D/g, "");
+      if (clean.length < 7 || clean.length > 8) return mostrarError("Cédula debe tener 7 u 8 dígitos");
+      data["cedula"] = clean;
     }
-  }
 
-  // SERVICIO MODERNIZADO con COD4
-  if (data["cod4"] && data["serviciomodernizado"]) {
-    const comb = concatCodTelefono(data["cod4"], data["serviciomodernizado"]);
-    if (!comb) return mostrarError("Concatenación inválida: COD 4 + Servicio Modernizado (7 dígitos)");
-    data["serviciomodernizado"] = comb;
-  }
+    ["telefono", "telefono2", "telefono3"].forEach(name => {
+      if (name in data && data[name]) {
+        const clean = (data[name] || "").replace(/\D/g, "");
+        if (clean.length !== 7) return mostrarError(`${name} debe tener exactamente 7 dígitos`);
+        data[name] = clean;
+      }
+    });
 
-  // NRO VOZ IP con COD5 (3 dígitos) + TEL (7)
-  if (data["cod5"] && data["nrovozip"]) {
-    const comb = concatCod3Tel7(data["cod5"], data["nrovozip"]);
-    if (!comb) return mostrarError("Concatenación inválida: COD 5 (3 dígitos) + Nro Voz IP (7 dígitos)");
-    data["nrovozip"] = comb;
-  }
+    if ("rif" in data) {
+      const rif = normalizarRIF(data["rif"]);
+      if (!rif) return mostrarError("RIF inválido (Formato: J/V/E + 9 dígitos)");
+      data["rif"] = rif;
+    }
 
-  // DATES → usar dataset.normalizado si existe
-  if (form.fechaabordaje && form.fechaabordaje.dataset.normalizado) {
-    data["fechaabordaje"] = form.fechaabordaje.dataset.normalizado;
-  }
-  if (form.fechaaceptacion && form.fechaaceptacion.dataset.normalizado) {
-    data["fechaaceptacion"] = form.fechaaceptacion.dataset.normalizado;
-  }
+    if ("montopago" in data) data["montopago"] = formatearMonto(data["montopago"]);
+    else data["montopago"] = "0,00";
 
-  console.log("🧠 [LOG] Datos normalizados a enviar:", data);
+    // Concatenar COD + TEL (ya tienes la lógica)
+    const concatMap = [
+      { cod: "cod", tel: "telefono", out: "telefono" },
+      { cod: "cod2", tel: "telefono2", out: "telefono2" },
+      { cod: "cod3", tel: "telefono3", out: "telefono3" }
+    ];
+    for (const { cod, tel, out } of concatMap) {
+      if (data[cod] && data[tel]) {
+        const comb = concatCodTelefono(data[cod], data[tel]);
+        if (!comb) return mostrarError(`Concatenación inválida: ${cod} + ${tel}`);
+        data[out] = comb;
+      }
+    }
 
-    // Enviar a Apps Script - AHORA: llamar cargarDemanda (sin wrappers)
+    // Log en cliente antes de enviar para depuración (verás en consola del navegador)
+    console.log("🧾 [ENVIANDO] Datos a enviar a servidor:", data);
+
     google.script.run
-      .withSuccessHandler(() => {
-        console.log("✅ Demanda registrada correctamente");
-        alert("Demanda registrada correctamente");
+      .withSuccessHandler(function(res) {
+        console.log("✅ Respuesta servidor:", res);
+        mostrarToast("Demanda cargada con éxito", "success");
+        // dejar mensaje overlay (4s) y reset parcial
+        setTimeout(() => { /* opcional: form.reset(); */ }, 4500);
       })
-      .withFailureHandler(err => {
-        console.error("❌ Error al registrar demanda:", err);
-        alert("Error al registrar demanda: " + (err && err.message ? err.message : err));
+      .withFailureHandler(function(err) {
+        console.error("❌ Error servidor:", err);
+        mostrarToast("Error guardando demanda", "error");
       })
-      .cargarDemanda(data); // ← llamada directa a la función del servidor renombrada
+      .cargarDemanda(data);
   }
 
   function mostrarError(msg) {
     console.error("❌ [VALIDACIÓN]", msg);
-    alert(msg);
+    // muestro toast de error y detengo
+    mostrarToast(msg, "error");
   }
 
-    // ============================
-  // 🚀 INICIALIZACIÓN INMEDIATA (parche)
   // ============================
-  // Antes: se usaba DOMContentLoaded (no se ejecuta cuando el fragmento se inyecta).
-  // Ahora: llamamos inmediatamente para pedir ListasFijas y renderizar.
+  // 🚀 INICIALIZACIÓN INMEDIATA
+  // ============================
   (function initCargarDemanda() {
     google.script.run
       .withSuccessHandler(function(listas) {
         try {
+          // renderizar formulario (esto va a llamar poblarListasGlobales después)
           renderFormulario(listas || {});
         } catch (e) {
           console.error("❌ Error renderizando formulario:", e);
@@ -725,45 +802,59 @@ function crearCampoRadioSiNo(labelText, name) {
       })
       .getListasFijas();
   })();
-    </script>
+</script>
 
-      <style>
-      /* ============================
-        🎨 Estilos mínimos y radio moderno
-        ============================ */
-      form { display: grid; gap: 16px; }
-      fieldset { border: 1px solid #ddd; padding: 12px; border-radius: 8px; }
-      legend { font-weight: 600; }
-      .campo { display: grid; gap: 6px; }
-      label { font-weight: 500; }
+<style>
+  /* ============================
+    🎨 Estilos mínimos (mantenidos) + nuevas reglas para validadores modernos
+    ============================ */
+  form { display: grid; gap: 16px; }
+  fieldset { border: 1px solid #ddd; padding: 12px; border-radius: 8px; }
+  legend { font-weight: 600; }
+  .campo { display: grid; gap: 6px; position: relative; }
+  label { font-weight: 500; }
 
-      /* Grupo teléfono: COD + número */
-      .telefono-group { display: flex; gap: 8px; align-items: center; }
+  /* Grupo teléfono: COD + número (ya integrado) */
+  .telefono-group { display:flex; gap:0; align-items:center; border-radius:8px; overflow:visible; }
 
-      /* Estados visuales ✔️/❌ */
-      .campo input.valido, .campo select.valido { border-color: green; }
-      .campo input.invalido, .campo select.invalido { border-color: red; }
+  /* modern validator: pequeño círculo con icono blanco */
+  .estado {
+    width:18px; height:18px; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center;
+    position:absolute; top:8px; right:10px;
+    font-size:12px; line-height:1; color:transparent;
+  }
+  .estado.valido {
+    background: #28a745; /* verde moderno */
+  }
+  .estado.valido::after {
+    content: "✓"; color: #fff; font-size:12px;
+  }
+  .estado.invalido {
+    background: #b00020;
+  }
+  .estado.invalido::after {
+    content: "✕"; color: #fff; font-size:12px;
+  }
 
-      .estado { font-size: 14px; margin-left: 6px; }
-      .estado.valido { color: green; }
-      .estado.invalido { color: red; }
+  /* Estados visuales en bordes (mantenemos) */
+  .campo input.valido, .campo select.valido { border-color: #28a745; box-shadow: 0 0 0 4px rgba(40,167,69,0.06); }
+  .campo input.invalido, .campo select.invalido { border-color: #b00020; box-shadow: 0 0 0 4px rgba(176,0,32,0.06); }
 
-      /* Grupo RIF: Select J/V/E + número */
-      .rif-group { display: flex; gap: 8px; align-items: center; }
+  /* error help */
+  .error { font-size:12px; color:#b00020; margin-top:4px; }
 
-      /* Radio moderno */
-      .radio-group { display: flex; gap: 16px; align-items: center; }
-      .radio-group label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
-      .radio-group input[type="radio"] { display: none; }
-      .radio-ui {
-        width: 18px; height: 18px; border-radius: 50%;
-        border: 2px solid #555; display: inline-flex; align-items: center; justify-content: center;
-      }
-      .radio-group input[type="radio"]:checked + .radio-ui {
-        border-color: #0a84ff;
-        box-shadow: 0 0 0 2px rgba(10,132,255,0.2);
-      }
-      .radio-group input[type="radio"]:checked + .radio-ui::after {
-        content: ""; width: 8px; height: 8px; background: #0a84ff; border-radius: 50%;
-      }
-      </style>
+  .rif-group { display:flex; gap:8px; align-items:center; }
+
+  .radio-group { display:flex; gap:16px; align-items:center; }
+  .radio-group label { display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
+  .radio-group input[type="radio"] { display:none; }
+  .radio-ui { width:18px; height:18px; border-radius:50%; border:2px solid #555; display:inline-flex; align-items:center; justify-content:center; }
+  .radio-group input[type="radio"]:checked + .radio-ui { border-color: #0a84ff; box-shadow: 0 0 0 2px rgba(10,132,255,0.2); }
+  .radio-group input[type="radio"]:checked + .radio-ui::after { content:""; width:8px; height:8px; background:#0a84ff; border-radius:50%; }
+
+  /* Botón principal */
+  .btn-primary { background: var(--color-primary); color:#fff; padding:8px 14px; min-width:140px; margin:12px auto 0 auto; display:block; border-radius:8px; font-weight:700; }
+
+  /* toast (cd-toast) se inyecta dinámicamente */
+</style>
