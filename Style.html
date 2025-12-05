@@ -448,41 +448,66 @@ Uniformes en todos los submódulos
 }
 
 /* ============================
-  2) VALIDADORES (✔️ / ❌) — mover al lado del nombre del input
-     - colocamos .estado como absolute dentro del .campo para que quede al lado del label
-     - soporta las clases .valido / .invalido que tu JS ya aplica
+  2) VALIDADORES /* Validadores pequeños (globales, aplican a todos los submódulos) */
 ============================ */
 
-/* El icono validador (span.estado) se posiciona en la esquina superior derecha del .campo,
-   lo que hace que se vea alineado con el label (nombre del input). */
 .campo .estado,
 .form-group .estado {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   position: absolute;
   top: 8px;
   right: 10px;
-  font-size: 18px;
+  font-size: 12px;
+  color: transparent; /* el icono lo ponemos con ::after */
+}
+
+/* Verde moderno (válido) */
+.campo .estado.valido {
+  background: #28a745 !important;
+}
+.campo .estado.valido::after {
+  content: "✓";
+  color: #fff;
+  font-size: 12px;
   line-height: 1;
-  pointer-events: none;
 }
 
-/* estilos para inputs con validación (tu JS añadirá .valido/.invalido) */
-.campo input.valido,
-.campo select.valido,
-.campo textarea.valido {
-  border-color: #28a745 !important; /* verde moderno */
-  box-shadow: 0 0 0 4px rgba(40,167,69,0.06);
+/* Rojo (inválido) */
+.campo .estado.invalido {
+  background: #b00020 !important;
+}
+.campo .estado.invalido::after {
+  content: "✕";
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
 }
 
-.campo input.invalido,
-.campo select.invalido,
-.campo textarea.invalido {
-  border-color: #b00020 !important; /* rojo error */
-  box-shadow: 0 0 0 4px rgba(176,0,32,0.06);
+/* Telefonos: borde del wrapper cuando está marcado como válido/ inválido */
+.telefono-group.valido { border-color: #28a745 !important; box-shadow: 0 0 0 4px rgba(40,167,69,0.06); }
+.telefono-group.invalido { border-color: #b00020 !important; box-shadow: 0 0 0 4px rgba(176,0,32,0.06); }
+
+/* Toasts globales (si quieres personalizar) */
+.cd-toast {
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #fff;
+  font-weight: 600;
 }
 
-/* Color del icono de validación según estado (span.estado debe recibir .valido/.invalido) */
-.campo .estado.valido { color: #28a745; }   /* ✔️ verde moderno */
-.campo .estado.invalido { color: #b00020; } /* ❌ rojo */
+/* Forzar fondo blanco en selects/inputs si algún navegador los pinta grises */
+.campo input, .campo select, .campo textarea {
+  background: #fff !important;
+}
+
+/* Mantener labels en azul institucional */
+.campo label, .form-group label, legend { color: var(--color-primary) !important; }
+
 
 /* ============================
   Radios: estilo uniforme y color institucional al seleccionar
