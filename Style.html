@@ -5,8 +5,8 @@ Estilos globales de la interfaz Consolidado GPON - GGEIP
 
 /* 🎨 Paleta de colores y variables globales */
 :root {
-  --color-primary: #2E86AB;   /* Azul principal del sidebar */
-  --color-dark: #1C5F7B;      /* Azul oscuro para encabezados */
+  --color-primary: #0b1839;   /* Azul principal del sidebar */
+  --color-secondary: #FF00FF; /* Magenta */
   --color-light: #E8F4F8;     /* Fondo claro general */
   --color-hover: rgba(255,255,255,0.15); /* Hover en menú */
   --color-active: #5DADE2;    /* Color activo en menú */
@@ -44,16 +44,20 @@ body {
 ============================ */
 .sidebar {
   width: 250px;                          /* ancho fijo */
-  background: var(--color-primary);       /* color principal */
+  background: var(--color-primary);      /* color principal */
   color: white;
   flex-shrink: 0;
-  overflow-y: auto;                       /* scroll solo si es necesario */
+  overflow-y: auto;                      /* scroll solo si es necesario */
   box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+
+  display: flex;                         /* 👈 convierte en flex container */
+  flex-direction: column;                /* 👈 apila hijos verticalmente */
+  height: 100vh;                         /* 👈 ocupa toda la altura de la ventana */
 }
 
 .sidebar-header {
   padding: 16px;                          /* antes 20px → más compacto */
-  background: var(--color-dark);
+  background: var(--color-secondary);
   border-bottom: 1px solid rgba(255,255,255,0.1);
   text-align: center;
 }
@@ -96,19 +100,21 @@ body {
 }
 
 .nav-link:hover {
-  background: var(--color-hover);
+  background: none;   /* elimina el fondo */
   transform: translateX(5px);
   color: white;
 }
 
 /* ============================
-📐 Footer del sidebar
+📐 Footer del sidebar (© 2025 Consolidado GPON - GGEIP )
 ============================ */
 .sidebar-footer {
+  margin-top: auto;
   text-align: center;
-  font-size: 0.75rem;                     /* antes 0.8rem → más compacto */
-  padding: 8px;                           /* antes 12px → reduce altura */
-  background: rgba(0,0,0,0.2);
+  font-size: 0.75rem;
+  padding: 8px;
+  background: var(--color-secondary); /* 👈 usa el color secundario */
+  color: #fff; /* 👈 opcional: texto blanco para contraste */
 }
 
 /* ============================
@@ -130,7 +136,7 @@ body {
 }
 
 .content-header h2 {
-  color: var(--text-color);
+  color: var(--color-primary);
   font-size: 1.4rem;                      /* antes 1.5rem → más compacto */
   font-weight: 600;
 }
@@ -173,7 +179,7 @@ body {
   background: #F0F8FC;
   border-bottom: 1px solid #E5F2F7;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-primary);
 }
 
 .card-body {
@@ -206,7 +212,10 @@ body {
 /* Flecha de expansión */
 .nav-arrow {
   margin-left: auto;
-  font-size: 0.9rem;
+  font-size: 0.9rem;        /* más grande que 0.9rem */
+  font-weight: bold;        /* en negrita */
+  color:  ;              /* blanco */
+  transform: scaleX(1.5);     /* estira horizontalmente, más ancho */
   transition: transform 0.3s ease;
 }
 
@@ -244,10 +253,12 @@ body {
 📐 Viñetas en submenús
 ============================ */
 .sub-menu li::before {
-  content: "›";                 /* símbolo de viñeta */
-  margin-right: 6px;             /* espacio entre la viñeta y el texto */
-  color: rgba(255,255,255,0.7);  /* color tenue para la viñeta */
-  font-size: 0.9rem;             /* tamaño similar al texto */
+  content: "►";                 /* símbolo sin fondo */
+  margin-right: 6px;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.9rem;
+  background: none !important; /* fuerza eliminar fondo */
+  display: inline;
 }
 
 /* ============================
@@ -303,7 +314,7 @@ Uniformes en todos los submódulos
   gap: 12px; /* separación entre grupos */
   grid-template-columns: repeat(2, 1fr); /* 2 columnas por defecto */
   font-size: 14px;
-  color: var(--text-color);
+  color: var(--color-primary);
 }
 
 /* Variable para controlar fácilmente el grosor de las etiquetas (negrita) */
@@ -453,17 +464,25 @@ Uniformes en todos los submódulos
 
 .campo .estado,
 .form-group .estado {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  top: 8px;
-  right: 10px;
+  /* width: 18px; */
+  /* height: 18px; */
+  /* border-radius: 50%; */
+  /* display: inline-flex; */
+  /* align-items: center; */
+  /* justify-content: center; */
+  /* position: absolute; */
+  /* top: 8px; */
+  /* right: 10px; */
+  /* font-size: 12px; */
+  /* color: transparent; */ /* el icono lo ponemos con ::after */
+}
+
+.campo .estado,
+.form-group .estado {
+  display: block;
+  margin-top: 4px;
   font-size: 12px;
-  color: transparent; /* el icono lo ponemos con ::after */
+  color: #b00020;
 }
 
 /* Verde moderno (válido) */
@@ -489,8 +508,17 @@ Uniformes en todos los submódulos
 }
 
 /* Telefonos: borde del wrapper cuando está marcado como válido/ inválido */
-.telefono-group.valido { border-color: #28a745 !important; box-shadow: 0 0 0 4px rgba(40,167,69,0.06); }
-.telefono-group.invalido { border-color: #b00020 !important; box-shadow: 0 0 0 4px rgba(176,0,32,0.06); }
+/* ELIMINAR ESTE COMENTARIO PARA ACTIVAR VALIDADOR
+.telefono-group.valido { 
+  border-color: #28a745 !important; 
+  box-shadow: 0 0 0 4px rgba(40,167,69,0.06); 
+}
+
+.telefono-group.invalido { 
+  border-color: #b00020 !important; 
+  box-shadow: 0 0 0 4px rgba(176,0,32,0.06); 
+}
+*/ELIMINAR ESTE COMENTARIO PARA ACTIVAR VALIDADOR
 
 /* Toasts globales (si quieres personalizar) */
 .cd-toast {
@@ -566,17 +594,17 @@ button.btn-primary {
 }
 
 /* ============================
-🧭 Franja blanca superior fija
+🧭 Franja superior fija
 ============================ */
 .top-header {
   position: fixed;
   top: 0;
-  left: var(--sidebar-width, 260px); /* alineada al panel izquierdo */
+  left: var(--sidebar-width, 250px); /* ❌ esto hace que la barra azul empiece DESPUÉS del sidebar */
   right: 0;
   height: 56px;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb; /* línea sutil inferior */
-  z-index: 50; /* por encima del contenido */
+  background: var(--color-primary);
+  border-bottom: 1px solid #e5e7eb;
+  z-index: 50;
 }
 
 .top-header-inner {
@@ -584,7 +612,7 @@ button.btn-primary {
   display: flex;
   align-items: center;
   padding: 0 16px;
-  color: var(--text-color);
+  color: #fff;
   font-weight: 600;
   font-size: 22px;
 }
@@ -608,10 +636,10 @@ button.btn-primary {
 }
 
 /* ============================
-🖼️ Franja Azul Nombre SubModulo
+🖼️ Franja Nombre SubModulo
 ============================ */
 .submodulo-titulo {
-  background-color: #2E86AB; /* usa el azul claro institucional */
+  background-color: var(--color-secondary); /* Color Magenta */
   color: white;
   font-size: 18px;
   font-weight: 600;
@@ -619,4 +647,93 @@ button.btn-primary {
   border-radius: 4px;
   margin-bottom: 12px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* ============================
+🖼️ loarder *Cargando*
+============================ */
+.loader-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(255,255,255,0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  font-family: sans-serif;
+  color: #444;
+}
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 6px solid #ccc;
+  border-top-color: var(--color-primary, #007bff);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Estado prístino: no mostrar bordes de error por :invalid */
+form.pristine input:invalid,
+form.pristine select:invalid,
+form.pristine textarea:invalid {
+  border-color: var(--input-border-default, #ccc) !important;
+  box-shadow: none !important;
+}
+
+/* Al iniciar validación, remueve la clase 'pristine' desde tu validador */
+
+/* ============================
+📌 Contenedor de cada campo
+============================ */
+.campo {
+  width: 100%;
+  display: block;
+  margin-bottom: 12px;
+}
+
+/* ============================
+📌 Campo que debe ocupar TODA la fila
+============================ */
+.campo-full {
+  grid-column: 1 / -1;   /* ✅ Ocupa todo el ancho del fieldset */
+  width: 100%;
+}
+
+/* ============================
+🖼️ Campo "Observaciones"
+============================ */
+.input-textarea {
+  width: 100%;               /* ✅ Se expande horizontalmente */
+  box-sizing: border-box;    /* ✅ Padding no rompe el layout */
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  resize: none;              /* ✅ Elimina el triángulo de resize */
+  height: 120px;             /* ✅ Altura fija, profesional */
+  margin-top: 8px;           /* ✅ Separación visual del campo anterior */
+}
+
+/* ============================
+🔢 Contador de caracteres
+============================ */
+.contador-caracteres {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  text-align: left;
+}
+
+.campo .estado {
+  color: #b00020 !important;
+}
+
+.campo .estado.invalido {
+  color: #fff !important;
 }
