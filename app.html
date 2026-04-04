@@ -5,6 +5,17 @@ Lógica de interacción de la interfaz (cliente)
 
 console.log("🟢 app.html cargado correctamente");
 
+// 🔄 Loader global
+function mostrarLoader() {
+  const loader = document.getElementById("loader");
+  if (loader) loader.style.display = "flex";
+}
+
+function ocultarLoader() {
+  const loader = document.getElementById("loader");
+  if (loader) loader.style.display = "none";
+}
+
 /**
  * 🔄 Mostrar módulo (cambia pestañas)
  */
@@ -78,6 +89,8 @@ async function cargarModulo(nombre) {
  * 📥 Cargar submódulo dinámicamente
  */
 async function cargarSubmodulo(nombreTecnico, nombreVisible) {
+  mostrarLoader(); // ⏳ Mostrar loader al inicio
+
   console.log(`🧠 [LOG] Intentando cargar submódulo: ${nombreTecnico}`);
 
   // 1. Ocultar imagen de fondo
@@ -95,32 +108,34 @@ async function cargarSubmodulo(nombreTecnico, nombreVisible) {
   const destino = document.getElementById("submoduloBody");
   if (!destino) {
     console.error("❌ [ERROR] No se encontró el contenedor destino: #submoduloBody");
+    ocultarLoader(); // ❌ Ocultar loader aunque falle
     return;
   }
 
-  destino.innerHTML = '<div style="padding:12px;">Cargando submódulo…</div>';
+    google.script.run
+  .withSuccessHandler(function (html) {
+    console.log("✅ [CLIENTE] HTML recibido para submódulo:", nombreTecnico);
+    destino.innerHTML = html;
 
-  google.script.run
-    .withSuccessHandler(function (html) {
-      console.log("✅ [CLIENTE] HTML recibido para submódulo:", nombreTecnico);
-      destino.innerHTML = html;
+    // Fuerza ejecución de scripts del fragmento
+    [...destino.querySelectorAll("script")].forEach(function (oldScript) {
+      const newScript = document.createElement("script");
+      if (oldScript.src) {
+        newScript.src = oldScript.src;
+      } else {
+        newScript.textContent = oldScript.textContent;
+      }
+      oldScript.parentNode.replaceChild(newScript, oldScript);
+    });
 
-      // Fuerza ejecución de scripts del fragmento
-      [...destino.querySelectorAll("script")].forEach(function (oldScript) {
-        const newScript = document.createElement("script");
-        if (oldScript.src) {
-          newScript.src = oldScript.src;
-        } else {
-          newScript.textContent = oldScript.textContent;
-        }
-        oldScript.parentNode.replaceChild(newScript, oldScript);
-      });
-    })
-    .withFailureHandler(function (e) {
-      console.error("❌ [CLIENTE] Error al cargar submódulo:", e && e.message ? e.message : e);
-      destino.innerHTML = `<div style="color:#b00020;padding:12px;">Error: ${e.message}</div>`;
-    })
-    .getModuloHTML(nombreTecnico); // el servidor ya sabe buscar ui/<nombreTecnico>
+    // 🔹 Ya no ocultamos aquí el loader
+  })
+  .withFailureHandler(function (e) {
+    console.error("❌ [CLIENTE] Error al cargar submódulo:", e && e.message ? e.message : e);
+    destino.innerHTML = `<div style="color:#b00020;padding:12px;">Error: ${e.message}</div>`;
+    ocultarLoader(); // ❌ En error sí lo ocultamos
+  })
+  .getModuloHTML(nombreTecnico); // el servidor ya sabe buscar ui/<nombreTecnico>
 }
 
 /**
