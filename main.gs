@@ -13,7 +13,9 @@ function doGet(e) {
     return HtmlService.createHtmlOutputFromFile('ui/' + e.parameter.mod);
   }
   const tpl = HtmlService.createTemplateFromFile('ui/index');
-  return tpl.evaluate().setTitle("Pasar Modular").setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  return tpl.evaluate()
+    .setTitle("Pasar Modular")
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 function include(filename) {
@@ -24,16 +26,23 @@ function getModuloHTML(nombre) {
   return HtmlService.createHtmlOutputFromFile('ui/' + nombre).getContent();
 }
 
+// ============================================================
+// 📋 OBTENER LISTAS FIJAS (Para inicializar el formulario)
+// ============================================================
 function getListasFijas() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName(LISTASFIJAS_SHEET);
+  
   if (!sheet) throw new Error("No se encontró la hoja 'ListasFijas'");
+  
   const data = sheet.getDataRange().getValues();
   const headers = data[0] || [];
   const map = {};
+  
   for (let c = 0; c < headers.length; c++) {
     const header = (headers[c] || "").toString().trim();
     if (!header) continue;
+    
     const col = [];
     for (let r = 1; r < data.length; r++) {
       const v = (data[r][c] || "").toString().trim();
@@ -44,6 +53,104 @@ function getListasFijas() {
   return map;
 }
 
+// ============================================================
+// 🧹 UTILIDAD: NORMALIZAR TEXTOS (Ignora mayúsculas, tildes y espacios)
+// ============================================================
+function limpiarTextoGS(texto) {
+  if (!texto) return "";
+  return texto.toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Quita acentos/tildes
+    .trim()
+    .toLowerCase();
+}
+
+// ============================================================
+// 📍 OBTENER ESTADOS POR REGIÓN (VERSIÓN CON DIAGNÓSTICO)
+// ============================================================
+function getEstadosPorRegion(region) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName("Lista_Estado"); 
+  
+  // 1. ¿Existe la pestaña?
+  if (!sheet) return ["❌ ERROR: No se encontró la pestaña 'Lista_Estado'"];
+  
+  const data = sheet.getDataRange().getValues();
+  if (data.length === 0) return ["❌ ERROR: La pestaña está totalmente vacía"];
+
+  const headers = data[0].map(limpiarTextoGS);
+  const colRegion = headers.indexOf(limpiarTextoGS("Region"));
+  const colEstado = headers.indexOf(limpiarTextoGS("Estado"));
+
+  // 2. ¿Encontró las columnas en la Fila 1?
+  if (colRegion < 0 || colEstado < 0) {
+    return ["❌ ERROR COLUMNAS: La fila 1 tiene estos datos -> " + data[0].join(" | ")];
+  }
+
+  const regionBuscada = limpiarTextoGS(region);
+
+  const resultados = data.slice(1)
+    .filter(r => limpiarTextoGS(r[colRegion]) === regionBuscada)
+    .map(r => r[colEstado])
+    .filter(v => v);
+
+  // 3. ¿Encontró la región escrita?
+  if (resultados.length === 0) {
+    return ["❌ ERROR DATOS: No se encontró la región '" + region + "' en la columna Region"];
+  }
+
+  return [...new Set(resultados)];
+}
+
+  // ============================================================
+  // 👨‍💼 OBTENER GERENTES POR REGIÓN
+  // Busca en la pestaña "Lista_Gerente"
+  // ============================================================
+  function getGerentesPorRegion(region) {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName("Lista_Gerente"); // <--- Pestaña correcta
+    if (!sheet) return [];
+
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0].map(limpiarTextoGS);
+    const colRegion = headers.indexOf(limpiarTextoGS("Region"));
+    const colGerente = headers.indexOf(limpiarTextoGS("Gerente"));
+
+    if (colRegion < 0 || colGerente < 0) return [];
+
+    const regionBuscada = limpiarTextoGS(region);
+
+    return data.slice(1)
+      .filter(r => limpiarTextoGS(r[colRegion]) === regionBuscada)
+      .map(r => r[colGerente])
+      .filter(v => v);
+  }
+
+  // ============================================================
+  // 🏙️ OBTENER MUNICIPIOS POR ESTADO
+  // Busca en la pestaña "Lista_Municipio"
+  // ============================================================
+  function getMunicipiosPorEstado(estado) {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName("Lista_Municipio"); // <--- Pestaña correcta
+    if (!sheet) return [];
+
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0].map(limpiarTextoGS);
+    const colEstado = headers.indexOf(limpiarTextoGS("Estado"));
+    const colMunicipio = headers.indexOf(limpiarTextoGS("Municipio"));
+
+    if (colEstado < 0 || colMunicipio < 0) return [];
+
+    const estadoBuscado = limpiarTextoGS(estado);
+
+    return data.slice(1)
+      .filter(r => limpiarTextoGS(r[colEstado]) === estadoBuscado)
+      .map(r => r[colMunicipio])
+      .filter(v => v);
+  }
+
+
 /**
  * guardar datos en sheet respetando el orden de columnas:
  * Se mapea cada encabezado -> key normalizado (normalizeKey) y se extrae datos[key]
@@ -53,7 +160,11 @@ function cargarDemanda(datos) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) throw new Error("No se encontró la hoja '" + SHEET_NAME + "'");
-  Logger.log("🟢 cargarDemanda recibido: " + JSON.stringify(datos));
+
+  // ============================================================
+  // ✅ LOG 1: Datos que llegan desde el frontend
+  // ============================================================
+  Logger.log("🟢 cargarDemanda recibido (ANTES de automáticos): " + JSON.stringify(datos));
 
   // obtener encabezados de la hoja (fila 1)
   const headersRange = sheet.getRange(1, 1, 1, sheet.getLastColumn());
@@ -61,25 +172,142 @@ function cargarDemanda(datos) {
 
   // función para normalizar header a la clave esperada por el cliente
   function keyFromHeader(h) {
-    return (h || "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_]/g, "").toLowerCase();
+    return (h || "")
+      .toString()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9_]/g, "")
+      .toLowerCase();
   }
 
+  // ============================================================
+  // 🆔 GENERAR ID UNICO gpon-[número]-[DDMMAAAA]-[HHMMSS]
+  // ============================================================
+  const idCol = headers.findIndex(h => keyFromHeader(h) === 'id') + 1;
+  let nextNum = 1;
+
+  if (idCol > 0 && sheet.getLastRow() > 1) {
+    const ids = sheet.getRange(2, idCol, sheet.getLastRow() - 1, 1).getValues().flat();
+    const numeros = ids
+      .map(v => {
+        if (v && typeof v === "string" && v.startsWith("gpon-")) {
+          const n = parseInt(v.split("-")[1]);
+          return isNaN(n) ? 0 : n;
+        }
+        return 0;
+      })
+      .filter(n => n > 0);
+
+    if (numeros.length > 0) {
+      nextNum = Math.max(...numeros) + 1;
+    }
+  }
+
+  const fecha = Utilities.formatDate(new Date(), "America/Caracas", "ddMMyyyy");
+  const hora  = Utilities.formatDate(new Date(), "America/Caracas", "HHmmss");
+  const nuevoID = `gpon-${nextNum}-${fecha}-${hora}`;
+  datos.id = nuevoID;
+
+  // ============================================================
+  // ✅ CAMPOS AUTOMÁTICOS — AHORA EN EL LUGAR CORRECTO
+  // ============================================================
+  datos.numero = "1 - Demanda"; 
+  datos["tipo_data"] = "Nuevo";
+  datos["usuario_registro"] = getUserEmail();
+  datos["fecha_registro"] = Utilities.formatDate(
+    new Date(),
+    "America/Caracas",
+    "dd/MM/yyyy HH:mm:ss"
+  );
+
+  // ============================================================
+  // ✅ LOG 2: Datos después de agregar automáticos
+  // ============================================================
+  Logger.log("📌 Datos DESPUÉS de automáticos: " + JSON.stringify(datos));
+
+  // ============================================================
+  // ✅ LOG 3: Headers y su normalización
+  // ============================================================
+  const headersDebug = headers.map(h => ({
+    headerOriginal: h,
+    headerNormalizado: keyFromHeader(h)
+  }));
+  Logger.log("📋 Headers detectados en Sheets: " + JSON.stringify(headersDebug));
+
+    // ============================================================
+    // ✅ VALIDACIONES DE FECHAS
+    // ============================================================
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    const fechaAbordaje = datos.fechaabordaje ? new Date(datos.fechaabordaje) : null;
+    const fechaAceptacion = datos.fechaaceptacion ? new Date(datos.fechaaceptacion) : null;
+
+    // ✅ Regla 1: Fecha Abordaje no puede ser mayor que hoy
+    if (fechaAbordaje && fechaAbordaje > hoy) {
+      return { ok: false, campo: "fechaabordaje", mensaje: "La fecha de abordaje no puede ser mayor al día de hoy." };
+    }
+
+    // ✅ Regla 2: Si oferta aceptada = "Sí", fecha aceptación es obligatoria
+    if (datos.ofertaaceptada === "Sí" && !fechaAceptacion) {
+      return { ok: false, campo: "fechaaceptacion", mensaje: "Debe ingresar la fecha de aceptación." };
+    }
+
+    // ✅ Regla 3: Si oferta aceptada = "No", fecha aceptación debe estar vacía
+    if (datos.ofertaaceptada === "No" && fechaAceptacion) {
+      return { ok: false, campo: "fechaaceptacion", mensaje: "No debe ingresar fecha de aceptación si la oferta no fue aceptada." };
+    }
+
+    // ✅ Regla 4: Fecha Aceptación no puede ser mayor que hoy
+    if (fechaAceptacion && fechaAceptacion > hoy) {
+      return { ok: false, campo: "fechaaceptacion", mensaje: "La fecha de aceptación no puede ser mayor al día de hoy." };
+    }
+
+    // ✅ Regla 5: Fecha Abordaje no puede ser mayor que Fecha Aceptación
+    if (fechaAbordaje && fechaAceptacion && fechaAbordaje > fechaAceptacion) {
+      return { ok: false, campo: "fechaabordaje", mensaje: "La fecha de abordaje no puede ser mayor que la fecha de aceptación." };
+    }
+
+    // ✅ Regla 6: Fecha Aceptación no puede ser menor que Fecha Abordaje
+    if (fechaAbordaje && fechaAceptacion && fechaAceptacion < fechaAbordaje) {
+      return { ok: false, campo: "fechaaceptacion", mensaje: "La fecha de aceptación no puede ser menor que la fecha de abordaje." };
+    }
+
+    // ✅ Mes y Año Abordaje automáticos
+    if (fechaAbordaje) {
+      const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+      datos.mesabordaje = meses[fechaAbordaje.getMonth()];
+      datos.anoabordaje = fechaAbordaje.getFullYear().toString();
+    }
+
+  // ============================================================
+  // ✅ Construir fila respetando el orden de headers
+  // ============================================================
   const fila = headers.map(h => {
     const k = keyFromHeader(h);
-    // si datos tiene la clave normalizada (ej 'nombrecontacto'), retornarla
     if (k in datos) return datos[k];
-    // también intentar con header original (en caso el cliente envía keys con mayúsculas/espacios)
     if (h in datos) return datos[h];
-    // si el cliente envía claves adicionales, ignorarlas si no mapean
     return "";
   });
 
-  // append o insertar row en la segunda fila para mantener orden (como antes insertRowBefore(2))
+  // ============================================================
+  // ✅ LOG 4: Fila final que se insertará
+  // ============================================================
+  Logger.log("✅ Fila FINAL a insertar: " + JSON.stringify(fila));
+
+  // insertar fila en la segunda posición
   sheet.insertRowBefore(2);
   sheet.getRange(2, 1, 1, fila.length).setValues([fila]);
 
-  Logger.log("✅ Fila insertada: " + JSON.stringify(fila));
   return { ok: true, message: "Carga guardada", filaInserted: fila };
+}
+
+// ============================================================
+// 📌 NUEVA FUNCIÓN: obtener correo Gmail del usuario autenticado
+// ============================================================
+function getUserEmail() {
+  return Session.getActiveUser().getEmail();
 }
 
 function logDebug(msg) {
