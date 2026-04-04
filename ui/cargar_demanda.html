@@ -83,124 +83,389 @@
     return basic.test(e) ? e : null;
   }
 
-  // ============================
-  // 🔷 RENDER FORMULARIO + POBLADO DE LISTAS
-  // ============================
-  function renderFormulario(listas = {}) {
-    console.log("🚀 Entrando a renderFormulario con listas:", listas);
-    const form = document.createElement("form");
-    form.id = "formCargaDemanda";
-    form.onsubmit = enviarCargaDemanda;
+  function crearCampoTextarea(label, name, requerido = false, extraClass = "") {
+  const div = document.createElement("div");
+  div.className = "campo";
+
+  // ✅ Si viene una clase extra, la agregamos
+  if (extraClass) div.classList.add(extraClass);
+
+  const lbl = document.createElement("label");
+  lbl.textContent = label;
+  lbl.setAttribute("for", name);
+
+  const textarea = document.createElement("textarea");
+  textarea.id = name;
+  textarea.name = name;
+  textarea.rows = 4;
+  textarea.className = "input-textarea";
+  textarea.style.width = "100%";
+  textarea.style.resize = "none";
+  textarea.maxLength = 250;
+
+  if (requerido) textarea.required = true;
+
+  // ✅ Contador dinámico
+  const contador = document.createElement("div");
+  contador.className = "contador-caracteres";
+  contador.textContent = "Máximo 250 caracteres — Quedan 250";
+
+  textarea.addEventListener("input", () => {
+    const restante = 250 - textarea.value.length;
+    const btn = document.getElementById("btn-enviar-demanda");
+
+    if (restante >= 0) {
+      contador.textContent = `Máximo 250 caracteres — Quedan ${restante}`;
+      if (btn) btn.disabled = false;
+    } else {
+      contador.textContent = `Has excedido el límite por ${Math.abs(restante)} caracteres`;
+      if (btn) btn.disabled = true;
+    }
+  });
+
+  div.appendChild(lbl);
+  div.appendChild(textarea);
+  div.appendChild(contador);
+
+  return div;
+}
 
     // ============================
-    // 🔷 BLOQUE: Información Personal
+    // 🔷 LIMPIAR FORMULARIO (global)
     // ============================
-    const personal = document.createElement("fieldset");
-    personal.className = "bloque-personal";
-    personal.innerHTML = `<legend>Información Personal</legend>`;
-    form.appendChild(personal);
+    function limpiarFormulario() {
+      const form = document.getElementById("formCargaDemanda");
+      if (!form) {
+        console.warn("⚠️ No se encontró el formulario para limpiar");
+        return;
+      }
 
-    personal.appendChild(crearCampoTexto("Nombre Contacto", "nombrecontacto", true));
-    personal.appendChild(crearCampoNumero("Cédula", "cedula", true, { minLen: 7, maxLen: 8 }));
-    personal.appendChild(crearCampoEmail("Correo", "correo", true));
-
-    personal.appendChild(crearCampoTelefono("Teléfono", "telefono", true, "cod"));
-    personal.appendChild(crearCampoTelefono("Teléfono 2", "telefono2", false, "cod2"));
-    personal.appendChild(crearCampoTelefono("Teléfono 3", "telefono3", false, "cod3"));
-
-    // ============================
-    // 🔷 BLOQUE: Información Cliente
-    // ============================
-    const cliente = document.createElement("fieldset");
-    cliente.className = "bloque-cliente";
-    cliente.innerHTML = `<legend>Información Cliente</legend>`;
-    form.appendChild(cliente);
-
-    cliente.appendChild(crearCampoTexto("Cliente", "cliente", true));
-    cliente.appendChild(crearCampoTexto("Rif", "rif", true));
-    cliente.appendChild(crearCampoTexto("Calle", "calle", false));
-    cliente.appendChild(crearCampoTexto("Edificio", "edificio", false));
-    cliente.appendChild(crearCampoTexto("Piso", "piso", false));
-    cliente.appendChild(crearCampoTexto("Local", "local", false));
-    cliente.appendChild(crearCampoSelect("Región", "region", listas["Lista_Region"] || [], true));
-    cliente.appendChild(crearCampoSelect("Gerente Región", "gerenteregion", listas["Lista_Gerente_Region"] || listas["Lista_Gerente"] || [], false));
-    cliente.appendChild(crearCampoSelect("Estado", "estado", listas["Lista_Estado"] || [], false));
-    cliente.appendChild(crearCampoSelect("Municipio", "municipio", listas["Lista_Municipio"] || [], false));
-    cliente.appendChild(crearCampoTexto("Ciudad", "ciudad", false));
-    cliente.appendChild(crearCampoSelect("Huella", "huella", listas["Lista_ODN"] || [], false));
-    cliente.appendChild(crearCampoTexto("Sector", "sector", false));
-    cliente.appendChild(crearCampoTexto("Cono O Modulo", "cono", false));
-
-    // ============================
-    // 🔷 BLOQUE: Información Servicio
-    // ============================
-    const servicio = document.createElement("fieldset");
-    servicio.className = "bloque-servicio";
-    servicio.innerHTML = `<legend>Información Servicio</legend>`;
-    form.appendChild(servicio);
-
-    servicio.appendChild(crearCampoSelect("Medio Abordaje", "medioabordaje", listas["Lista_Medio_Abordaje"] || [], true));
-    servicio.appendChild(crearCampoSelect("Situación Abordaje", "situacionabordaje", listas["Lista_Situacion"] || [], true));
-    servicio.appendChild(crearCampoDate("Fecha Abordaje", "fechaabordaje", true));
-    servicio.appendChild(crearCampoSelect("Estatus Local", "estatuslocal", listas["Lista_Estatus"] || [], true));
-    servicio.appendChild(crearCampoRadioSiNo("Oferta Entregada", "ofertaentregada"));
-    servicio.appendChild(crearCampoRadioSiNo("Oferta Aceptada", "ofertaaceptada"));
-    servicio.appendChild(crearCampoSelect("Motivo No Aceptación", "motivonoaceptacion", listas["Lista_No_Aceptacion"] || [], false));
-    servicio.appendChild(crearCampoDate("Fecha Aceptación", "fechaaceptacion", false));
-    servicio.appendChild(crearCampoSelect("Aceptación Recibida Por", "aceptacionrecibidapor", listas["Lista_Aceptacion_por"] || [], false));
-    servicio.appendChild(crearCampoSelect("Abordado Por", "abordadopor", listas["Lista_Abordado_por"] || [], false));
-
-    // ============================
-    // 🔷 BOTONES DE ACCIÓN (mantengo la estructura que tienes)
-    // ============================
-    const submitBtn = document.createElement("button");
-    submitBtn.type = "submit";
-    submitBtn.textContent = "Enviar Demanda";
-    submitBtn.className = "btn btn-primary";
-
-    const limpiarBtn = document.createElement("button");
-    limpiarBtn.type = "button";
-    limpiarBtn.textContent = "Limpiar";
-    limpiarBtn.className = "btn btn-primary";
-    limpiarBtn.addEventListener("click", () => {
-      form.reset();
+      // 1) Limpiar valores y clases en inputs/selects/textarea
       form.querySelectorAll("input, select, textarea").forEach(el => {
         if (el.tagName === "SELECT") el.selectedIndex = 0;
         else if (el.type === "checkbox" || el.type === "radio") el.checked = false;
         else el.value = "";
-        el.classList.remove("valido", "invalido");
+
+        el.classList.remove("valido", "invalido", "is-invalid", "is-valid", "error", "success");
+        el.removeAttribute("aria-invalid");
+        el.style.border = ""; // por si hay estilo inline
       });
-      form.querySelectorAll(".help, .error").forEach(el => el.textContent = "");
-      form.querySelectorAll(".estado").forEach(e => { e.className = "estado"; e.innerHTML = ""; });
-      const scroller = document.querySelector(".main-content");
-      if (scroller) scroller.scrollTo({ top: 0, behavior: "smooth" });
-    });
 
-    const buttonGroup = document.createElement("div");
-    buttonGroup.className = "form-buttons";
-    buttonGroup.appendChild(submitBtn);
-    buttonGroup.appendChild(limpiarBtn);
-    form.appendChild(buttonGroup);
+      // 2) Limpiar wrappers de validación (importante para Teléfono/COD)
+      form.querySelectorAll(
+        ".form-group, .campo, .campo-telefono, .grupo-telefono, .grupo-cod, .bloque-cod"
+      ).forEach(w => {
+        w.classList.remove("valido", "invalido", "is-invalid", "is-valid", "has-error", "has-success");
+        w.removeAttribute("aria-invalid");
+      });
 
-    // Insertar formulario
-    const contenedor = document.getElementById("contenedor-formulario");
-    contenedor.innerHTML = "";
-    contenedor.appendChild(form);
+      // 2b) Limpiar wrappers internos de Teléfono (telefono-group)
+      form.querySelectorAll(".telefono-group").forEach(w => {
+        w.classList.remove("valido", "invalido", "is-invalid", "is-valid", "has-error", "has-success");
+        w.removeAttribute("aria-invalid");
+        w.style.border = ""; // por si el borde se aplica al wrapper
+      });
 
-    // POBLAR LISTAS (CODs, selects) y enlazar dependencias y comportamientos dinámicos
-    try {
-      poblarListasGlobales(listas);
-      enlazarDependencias(listas);
-      enlazarOfertaAceptada();
-    } catch (e) {
-      console.warn("⚠️ poblarListasGlobales/enlazarDependencias falló:", e);
+      // 3) Específicos: Teléfonos y CODs (por nombre y por data-atributo, si existen)
+      const telInputs = form.querySelectorAll(
+        "input[name='telefono'], input[name='telefono1'], input[name='telefono2'], input[name='telefono3'], [data-field='telefono'] input"
+      );
+      telInputs.forEach(t => {
+        t.value = "";
+        t.classList.remove("valido", "invalido", "is-invalid", "is-valid", "error", "success");
+        t.removeAttribute("aria-invalid");
+      });
+
+      const codSelects = form.querySelectorAll(
+        "select[name='cod'], select[name='cod1'], select[name='cod2'], select[name='cod3'], [data-field='cod'] select"
+      );
+      codSelects.forEach(s => {
+        s.selectedIndex = 0;
+        s.classList.remove("valido", "invalido", "is-invalid", "is-valid", "error", "success");
+        s.removeAttribute("aria-invalid");
+      });
+
+      // 4) Borrar mensajes e iconos
+      form.querySelectorAll(".help, .error, .error-message").forEach(el => {
+        el.textContent = "";
+        el.style.display = "none";
+      });
+      form.querySelectorAll(".estado, .icon-error, .icon-valid").forEach(e => {
+        e.className = "estado";
+        e.innerHTML = "";
+      });
+
+      // 5) Scroll al inicio
+      const scroller = document.querySelector(".main-content") || window;
+      scroller.scrollTo({ top: 0, behavior: "smooth" });
+
+      console.log("🧹 limpiarFormulario(): limpieza profunda ejecutada");
     }
 
-    form.addEventListener("submit", enviarCargaDemanda);
-    console.log("✅ Formulario renderizado y listener de envío asociado");
+    // ============================
+    // 🔷 RE-INICIALIZAR FORMULARIO (global)
+    // ============================
+    window.reInicializarFormulario = function reInicializarFormulario() {
+      console.log("🔄 reInicializarFormulario(): inicio");
+
+      const form = document.getElementById("formCargaDemanda");
+      if (!form) {
+        console.warn("⚠️ reInicializarFormulario(): no se encontró #formCargaDemanda");
+        return;
+      }
+
+      // Evitar bordes por :invalid mientras limpiamos
+      const teniaNoValidate = form.hasAttribute("novalidate");
+      form.setAttribute("novalidate", "");
+
+      // 1) Limpieza profunda
+      form.querySelectorAll("input, select, textarea").forEach(el => {
+        if (el.tagName === "SELECT") el.selectedIndex = 0;
+        else if (el.type === "checkbox" || el.type === "radio") el.checked = false;
+        else el.value = "";
+
+        el.classList.remove("valido", "invalido", "is-invalid", "is-valid", "error", "success");
+        el.removeAttribute("aria-invalid");
+        el.style.border = "";
+        try { el.setCustomValidity(""); } catch {}
+      });
+
+      // 2) Teléfonos y COD (nombres exactos)
+      ["telefono", "telefono2", "telefono3"].forEach(name => {
+        const tel = form.querySelector(`input[name='${name}']`);
+        if (tel) {
+          tel.value = "";
+          tel.classList.remove("valido", "invalido", "is-invalid", "is-valid", "error", "success");
+          tel.removeAttribute("aria-invalid");
+          tel.style.border = "";
+          try { tel.setCustomValidity(""); } catch {}
+          const w = tel.closest(".form-group, .campo, .campo-telefono, .grupo-telefono");
+          if (w) w.classList.remove("valido", "invalido", "is-invalid", "is-valid", "has-error", "has-success");
+        }
+      });
+
+      ["cod", "cod2", "cod3"].forEach(name => {
+        const cod = form.querySelector(`select[name='${name}']`);
+        if (cod) {
+          cod.selectedIndex = 0;
+          cod.classList.remove("valido", "invalido", "is-invalid", "is-valid", "error", "success");
+          cod.removeAttribute("aria-invalid");
+          cod.style.border = "";
+          try { cod.setCustomValidity(""); } catch {}
+          const w = cod.closest(".form-group, .campo, .grupo-cod, .bloque-cod");
+          if (w) w.classList.remove("valido", "invalido", "is-invalid", "is-valid", "has-error", "has-success");
+        }
+      });
+
+      // 3) Mensajes e iconos
+      form.querySelectorAll(".help, .error, .error-message").forEach(el => {
+        el.textContent = "";
+        el.style.display = "none";
+      });
+      form.querySelectorAll(".estado, .icon-error, .icon-valid").forEach(e => {
+        e.className = "estado";
+        e.innerHTML = "";
+      });
+
+      // 4) Re-aplicar listas y dependencias (asegura fuente global)
+      try {
+        const listas = window.listas || {};
+        poblarListasGlobales(listas);
+        enlazarDependencias(listas);
+        enlazarOfertaAceptada();
+      } catch (e) {
+        console.warn("⚠️ reInicializarFormulario(): falló re-aplicar dependencias", e);
+      }
+
+      // 5) Restaurar validación nativa
+      if (!teniaNoValidate) form.removeAttribute("novalidate");
+
+      // 6) Marcar como prístino (opcional si usas CSS condicional)
+      form.classList.add("pristine");
+
+      // 7) Scroll al inicio
+      const scroller = document.querySelector(".main-content") || window;
+      scroller.scrollTo({ top: 0, behavior: "smooth" });
+
+      console.log("✅ reInicializarFormulario(): fin");
+    };
+// ============================
+// 📨 ENVÍO DEL FORMULARIO (validación + normalización) y TOAST
+// ============================
+function mostrarToast(msg, tipo = "success") {
+  const cont = document.getElementById("contenedor-formulario");
+  if (!cont) { alert(msg); return; }
+
+  const overlay = document.createElement("div");
+  overlay.className = "cd-overlay";
+  Object.assign(overlay.style, {
+    position: "fixed",
+    top: "0", left: "0",
+    width: "100%", height: "100%",
+    background: "rgba(0,0,0,0.4)",
+    zIndex: 9998
+  });
+  document.body.appendChild(overlay);
+
+  const t = document.createElement("div");
+  t.className = `cd-toast ${tipo}`;
+  t.textContent = msg;
+  Object.assign(t.style, {
+    position: "fixed",
+    top: "50%", left: "50%",
+    transform: "translate(-50%, -50%)",
+    zIndex: 9999,
+    background: tipo === "success" ? "var(--color-primary)" : "#b00020",
+    color: "#fff",
+    padding: "20px 28px",
+    fontSize: "1.6rem",
+    fontWeight: "700",
+    borderRadius: "12px",
+    border: "1px solid #00FF7F",
+    boxShadow: "0 0 12px #00FF7F",
+    opacity: "1",
+    transition: "opacity 0.4s ease",
+    textAlign: "center"
+  });
+  document.body.appendChild(t);
+
+  setTimeout(() => { t.style.opacity = "0"; }, 4000);
+  setTimeout(() => {
+    t.remove();
+    overlay.remove();
+    console.log("✅ Toast cerrado: ejecutando reInicializarFormulario()");
+    if (typeof window.reInicializarFormulario === "function") {
+      window.reInicializarFormulario();
+    } else {
+      console.error("❌ reInicializarFormulario no está definida en window");
+    }
+  }, 4500);
+}
+
+function enviarCargaDemanda(event, origen = "directo") {
+  if (event) event.preventDefault();
+
+  console.log(`🚀 enviarCargaDemanda ejecutado [${origen}]`);
+
+  const form = document.getElementById("formCargaDemanda");
+  const data = {};
+
+  [...form.elements].forEach(el => {
+    if (!el.name) return;
+    if (el.type === "radio") {
+      if (el.checked) data[el.name] = el.value;
+      return;
+    }
+    data[el.name] = el.value;
+  });
+
+  // 🔹 Normalizaciones y validaciones aquí dentro
+  const camposTextoNombrePropio = ["nombrecontacto", "cliente", "calle", "edificio", "piso", "local", "ciudad", "sector", "cono", "direccioninstalacion", "observacionventas"];
+  camposTextoNombrePropio.forEach(k => { if (k in data) data[k] = toNombrePropio(data[k]); });
+
+  if ("correo" in data) {
+    const valid = validarEmailNoCantv(data["correo"]);
+    if (!valid) {
+      const emailError = document.querySelector('.campo.email .email-error');
+      if (emailError) { emailError.style.display = "block"; emailError.textContent = "No se permite dominio @cantv"; }
+      return mostrarError("Correo inválido o dominio cantv no permitido");
+    }
+    data["correo"] = valid;
   }
 
-  // ============================
+    if ("cedula" in data) {
+      const clean = (data["cedula"] || "").replace(/\D/g, "");
+      if (clean.length < 7 || clean.length > 8) return mostrarError("Cédula debe tener 7 u 8 dígitos");
+      data["cedula"] = clean;
+    }
+
+    ["telefono", "telefono2", "telefono3"].forEach(name => {
+      if (name in data && data[name]) {
+        const clean = (data[name] || "").replace(/\D/g, "");
+        if (clean.length !== 7) return mostrarError(`${name} debe tener exactamente 7 dígitos`);
+        data[name] = clean;
+      }
+    });
+
+    if ("rif" in data) {
+      const rif = normalizarRIF(data["rif"]);
+      if (!rif) return mostrarError("RIF inválido (Formato: J/V/E + 9 dígitos)");
+      data["rif"] = rif;
+    }
+
+    if ("montopago" in data) data["montopago"] = formatearMonto(data["montopago"]);
+    else data["montopago"] = "0,00";
+
+    // Concatenar COD + TEL (ya tienes la lógica)
+    const concatMap = [
+      { cod: "cod", tel: "telefono", out: "telefono" },
+      { cod: "cod2", tel: "telefono2", out: "telefono2" },
+      { cod: "cod3", tel: "telefono3", out: "telefono3" }
+    ];
+    for (const { cod, tel, out } of concatMap) {
+      if (data[cod] && data[tel]) {
+        const comb = concatCodTelefono(data[cod], data[tel]);
+        if (!comb) return mostrarError(`Concatenación inválida: ${cod} + ${tel}`);
+        data[out] = comb;
+      }
+    }
+
+    // Log en cliente antes de enviar para depuración (verás en consola del navegador)
+    console.log(`🧾 [ENVIANDO - ${origen}] Datos a enviar a servidor:`, data);
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      console.log("✅ Respuesta servidor:", res);
+
+      // ✅ Manejo de error devuelto por el backend
+      if (!res.ok) {
+        mostrarErrorCampo(res.campo, res.mensaje);
+        return; // ⛔ Detiene el flujo
+      }
+
+      // ✅ Si todo salió bien
+      mostrarToast("Demanda cargada con éxito", "success");
+      setTimeout(() => { /* opcional: form.reset(); */ }, 4500);
+    })
+    .withFailureHandler(function(err) {
+      console.error("❌ Error servidor:", err);
+      mostrarToast("Error guardando demanda", "error");
+    })
+    .cargarDemanda(data);
+}
+
+function mostrarError(msg) {
+  console.error("❌ [VALIDACIÓN]", msg);
+  // muestro toast de error y detengo
+  mostrarToast(msg, "error");
+}
+
+// ✅ NUEVA FUNCIÓN — muestra el error debajo del input correcto
+function mostrarErrorCampo(campo, mensaje) {
+  // ✅ Busca por ID o por NAME
+  const input = document.getElementById(campo) 
+              || document.querySelector(`[name="${campo}"]`);
+
+  if (!input) {
+    console.warn("No se encontró el campo:", campo);
+    return;
+  }
+
+  // ✅ Busca el <span class="estado"> dentro del mismo contenedor
+  const estado = input.parentElement.querySelector(".estado");
+  if (!estado) return;
+
+  // ✅ Aplica estilos y mensaje
+  estado.className = "estado invalido";
+  estado.style.color = "red";
+  estado.style.fontSize = "11px";
+  estado.innerHTML = mensaje;
+
+  input.classList.add("invalido");
+  input.classList.remove("valido");
+}
+
+// ============================
   // 🧱 CONSTRUCTORES DE CAMPOS
   // (Conservé tu estructura y comentarios; sólo ajusté lo necesario)
   // ============================
@@ -209,7 +474,7 @@
     wrap.className = "campo texto";
     wrap.innerHTML = `
       <!-- 🔹 Campo TEXTO: ${labelText} -->
-      <label for="${name}">${labelText}</label>
+      <label for="${name}">${labelText}${required ? " *" : ""}</label>
       <input type="text" id="${name}" name="${name}" ${required ? "required" : ""} />
       <span class="estado"></span>
       <div class="error help" style="display:none;"></div>
@@ -244,7 +509,7 @@
     wrap.className = "campo numero";
     wrap.innerHTML = `
       <!-- 🔹 Campo NÚMERO: ${labelText} -->
-      <label for="${name}">${labelText}</label>
+      <label for="${name}">${labelText}${required ? " *" : ""}</label>
       <input type="text" inputmode="numeric" id="${name}" name="${name}" ${required ? "required" : ""} />
       <span class="estado"></span>
     `;
@@ -280,7 +545,7 @@
     // Render: Select COD + Input Teléfono en la misma fila (span.estado fuera del wrapper)
     wrap.innerHTML = `
       <!-- 🔹 Campo TELÉFONO: ${labelTextFinal} (COD + 7 dígitos) -->
-      <label for="${name}">${labelTextFinal}</label>
+      <label for="${name}">${labelText}${required ? " *" : ""}</label>
       <div class="telefono-group">
         <select id="${codFieldName}" name="${codFieldName}">
           <option value="">COD</option>
@@ -322,7 +587,7 @@
     wrap.className = "campo rif";
     wrap.innerHTML = `
       <!-- 🔹 Campo RIF: ${labelText} (J/V/E + 9 dígitos) -->
-      <label for="${name}">${labelText}</label>
+      <label for="${name}">${labelText}${required ? " *" : ""}</label>
       <div class="rif-group">
         <select id="${name}_tipo" name="${name}_tipo" ${required ? "required" : ""}>
           <option value="">Tipo</option>
@@ -362,7 +627,7 @@
     wrap.className = "campo email";
     wrap.innerHTML = `
       <!-- 🔹 Campo EMAIL: ${labelText} (prohibido dominio cantv) -->
-      <label for="${name}">${labelText}</label>
+      <label for="${name}">${labelText}${required ? " *" : ""}</label>
       <input type="email" id="${name}" name="${name}" ${required ? "required" : ""} />
       <span class="estado"></span>
       <div class="error email-error" style="display:none;"></div>
@@ -413,7 +678,7 @@
 
     wrap.innerHTML = `
       <!-- 🔹 Campo SELECT: ${labelText} -->
-      <label for="${name}">${labelText}</label>
+      <label for="${name}">${labelText}${required ? " *" : ""}</label>
       <select id="${name}" name="${name}" ${required ? "required" : ""}>
         <option value="">Seleccione...</option>
         ${optsHTML}
@@ -445,7 +710,7 @@
     wrap.className = "campo date";
     wrap.innerHTML = `
       <!-- 🔹 Campo DATE: ${labelText} (dd/mm/aaaa, zona horaria Caracas) -->
-      <label for="${name}">${labelText}</label>
+      <label for="${name}">${labelText}${required ? " *" : ""}</label>
       <input type="date" id="${name}" name="${name}" ${required ? "required" : ""} />
       <span class="estado"></span>
     `;
@@ -455,17 +720,30 @@
 
     function validar() {
       const val = input.value;
+
+      // ✅ Si hay valor → normaliza y limpia error
       if (val) {
         const fecha = new Date(val);
         const dia = String(fecha.getDate()).padStart(2, "0");
         const mes = String(fecha.getMonth() + 1).padStart(2, "0");
         const anio = fecha.getFullYear();
+
         input.dataset.normalizado = `${dia}/${mes}/${anio}`;
-        input.classList.add("valido"); input.classList.remove("invalido");
-        estado.className = "estado valido"; estado.innerHTML = "";
-      } else {
-        input.classList.add("invalido"); input.classList.remove("valido");
-        estado.className = "estado invalido"; estado.innerHTML = "";
+        input.classList.add("valido");
+        input.classList.remove("invalido");
+
+        estado.className = "estado valido";
+        estado.innerHTML = ""; // ✅ limpia mensaje
+      } 
+      // ✅ Si NO hay valor → marca error visual
+      else {
+        input.classList.add("invalido");
+        input.classList.remove("valido");
+
+        estado.className = "estado invalido";
+        estado.style.color = "red";
+        estado.style.fontSize = "11px";
+        estado.innerHTML = "Este campo es obligatorio"; // ✅ mensaje debajo del input
       }
     }
 
@@ -473,7 +751,7 @@
     input.addEventListener("blur", validar);
 
     return wrap;
-  }
+}
 
   function crearCampoRadioSiNo(labelText, name) {
     const wrap = document.createElement("div");
@@ -558,6 +836,24 @@
     function limpiarSelect(sel) {
       if (!sel) return;
       sel.innerHTML = `<option value="">Seleccione...</option>`;
+    }
+
+    // ============================================================
+    // ✍️ UTILIDAD: POBLAR SELECT
+    // ============================================================
+    // Recibe un elemento <select> y un arreglo de opciones, y lo llena
+    function poblarSelect(sel, opciones) {
+      if (!sel) return;
+      
+      // Verifica que opciones sea un arreglo válido, si no, lo deja vacío
+      if (!Array.isArray(opciones) || opciones.length === 0) {
+        limpiarSelect(sel);
+        return;
+      }
+
+      // Mapea el arreglo de opciones a etiquetas <option> de HTML
+      sel.innerHTML = `<option value="">Seleccione...</option>` + 
+        opciones.map(opt => `<option value="${opt}">${opt}</option>`).join("");
     }
 
     // ============================================================
@@ -665,142 +961,152 @@
       if (aceptpor) aceptpor.closest('.campo').style.display = "none";
     }
 
+// ============================
+  // 🔷 RENDER FORMULARIO + POBLADO DE LISTAS
   // ============================
-  // 📨 ENVÍO DEL FORMULARIO (validación + normalización) y TOAST
-  // ============================
-  function mostrarToast(msg, tipo = "success") {
-    // crea un toast simple en el contenedor-formulario
+  function renderFormulario(listas = {}) {
+    console.log("🚀 Entrando a renderFormulario con listas:", listas);
+    const form = document.createElement("form");
+    form.id = "formCargaDemanda";
+
+    // ============================
+    // 🔷 BLOQUE: Información Personal (true = obligario) - (false = No Obligatorio)
+    // ============================
+    const personal = document.createElement("fieldset");
+    personal.className = "bloque-personal";
+    personal.innerHTML = `<legend>Información Personal</legend>`;
+    form.appendChild(personal);
+
+    personal.appendChild(crearCampoTexto("Nombre Contacto", "nombrecontacto", true));
+    personal.appendChild(crearCampoNumero("Cédula", "cedula", true, { minLen: 7, maxLen: 8 }));
+    personal.appendChild(crearCampoEmail("Correo", "correo", true));
+
+    personal.appendChild(crearCampoTelefono("Teléfono", "telefono", true, "cod"));
+    personal.appendChild(crearCampoTelefono("Teléfono 2", "telefono2", false, "cod2"));
+    personal.appendChild(crearCampoTelefono("Teléfono 3", "telefono3", false, "cod3"));
+
+    // ============================
+    // 🔷 BLOQUE: Información Cliente (true = obligario) - (false = No Obligatorio)
+    // ============================
+    const cliente = document.createElement("fieldset");
+    cliente.className = "bloque-cliente";
+    cliente.innerHTML = `<legend>Información Cliente</legend>`;
+    form.appendChild(cliente);
+
+    cliente.appendChild(crearCampoTexto("Cliente", "cliente", true));
+    cliente.appendChild(crearCampoTexto("Rif", "rif", true));
+    cliente.appendChild(crearCampoTexto("Calle", "calle", false));
+    cliente.appendChild(crearCampoTexto("Edificio", "edificio", false));
+    cliente.appendChild(crearCampoTexto("Piso", "piso", false));
+    cliente.appendChild(crearCampoTexto("Local", "local", false));
+    cliente.appendChild(crearCampoSelect("Región", "region", listas["Lista_Region"] || [], true));
+    cliente.appendChild(crearCampoSelect("Gerente Región", "gerenteregion", listas["Lista_Gerente_Region"] || listas["Lista_Gerente"] || [], false));
+    cliente.appendChild(crearCampoSelect("Estado", "estado", listas["Lista_Estado"] || [], false));
+    cliente.appendChild(crearCampoSelect("Municipio", "municipio", listas["Lista_Municipio"] || [], false));
+    cliente.appendChild(crearCampoTexto("Ciudad", "ciudad", false));
+    cliente.appendChild(crearCampoSelect("Huella", "huella", listas["Lista_ODN"] || [], false));
+    cliente.appendChild(crearCampoTexto("Sector", "sector", false));
+    cliente.appendChild(crearCampoTexto("Cono O Modulo", "cono", false));
+
+    // ============================
+    // 🔷 BLOQUE: Información Servicio (true = obligario) - (false = No Obligatorio)
+    // ============================
+    const servicio = document.createElement("fieldset");
+    servicio.className = "bloque-servicio";
+    servicio.innerHTML = `<legend>Información Servicio</legend>`;
+    form.appendChild(servicio);
+
+    servicio.appendChild(crearCampoSelect("Medio Abordaje", "medioabordaje", listas["Lista_Medio_Abordaje"] || [], true));
+    servicio.appendChild(crearCampoSelect("Situación Abordaje", "situacionabordaje", listas["Lista_Situacion"] || [], true));
+    servicio.appendChild(crearCampoDate("Fecha Abordaje", "fechaabordaje", true));
+    servicio.appendChild(crearCampoSelect("Estatus Local", "estatuslocal", listas["Lista_Estatus"] || [], true));
+    servicio.appendChild(crearCampoRadioSiNo("Oferta Entregada", "ofertaentregada"));
+    servicio.appendChild(crearCampoRadioSiNo("Oferta Aceptada", "ofertaaceptada"));
+    servicio.appendChild(crearCampoSelect("Motivo No Aceptación", "motivonoaceptacion", listas["Lista_No_Aceptacion"] || [], false));
+    servicio.appendChild(crearCampoDate("Fecha Aceptación", "fechaaceptacion", false));
+    servicio.appendChild(crearCampoSelect("Aceptación Recibida Por", "aceptacionrecibidapor", listas["Lista_Aceptacion_por"] || [], false));
+    servicio.appendChild(crearCampoSelect("Abordado Por", "abordadopor", listas["Lista_Abordado_por"] || [], false));
+
+    servicio.appendChild(crearCampoTextarea("Observaciones", "observacionventas", false, "campo-full"));
+
+    window.listas = listas;
+
     const cont = document.getElementById("contenedor-formulario");
-    if (!cont) { alert(msg); return; }
-    const t = document.createElement("div");
-    t.className = `cd-toast ${tipo}`;
-    t.textContent = msg;
-    Object.assign(t.style, {
-      position: "fixed",
-      right: "24px",
-      top: "80px",
-      zIndex: 9999,
-      background: tipo === "success" ? "var(--color-primary)" : "#b00020",
-      color: "#fff",
-      padding: "10px 14px",
-      borderRadius: "8px",
-      boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-      opacity: "1",
-      transition: "opacity 0.4s ease"
-    });
-    document.body.appendChild(t);
-    setTimeout(() => { t.style.opacity = "0"; }, 4000);
-    setTimeout(() => { t.remove(); }, 4500);
-  }
+    cont.innerHTML = "";
+    cont.appendChild(form);
 
-  function enviarCargaDemanda(event) {
-    event.preventDefault();
-    const form = document.getElementById("formCargaDemanda");
-    const data = {};
+    // ============================
+    // 🔷 BOTONES DE ACCIÓN
+    // ============================
+    const submitBtn = document.createElement("button");
+    submitBtn.type = "submit";
+    submitBtn.textContent = "Enviar Demanda";
+    submitBtn.className = "btn btn-primary";
+    submitBtn.id = "btn-enviar-demanda";
 
-    [...form.elements].forEach(el => {
-      if (!el.name) return;
-      if (el.type === "radio") {
-        if (el.checked) data[el.name] = el.value;
-        return;
-      }
-      data[el.name] = el.value;
-    });
-
-    // Normalizaciones (mantengo las tuyas, pero con logging)
-    const camposTextoNombrePropio = ["nombrecontacto", "cliente", "calle", "edificio", "piso", "local", "ciudad", "sector", "cono", "direccioninstalacion", "observacionventas"];
-    camposTextoNombrePropio.forEach(k => { if (k in data) data[k] = toNombrePropio(data[k]); });
-
-    if ("correo" in data) {
-      const valid = validarEmailNoCantv(data["correo"]);
-      if (!valid) {
-        // mostrar error inline
-        const emailError = document.querySelector('.campo.email .email-error');
-        if (emailError) { emailError.style.display = "block"; emailError.textContent = "No se permite dominio @cantv"; }
-        return mostrarError("Correo inválido o dominio cantv no permitido");
-      }
-      data["correo"] = valid;
-    }
-
-    if ("cedula" in data) {
-      const clean = (data["cedula"] || "").replace(/\D/g, "");
-      if (clean.length < 7 || clean.length > 8) return mostrarError("Cédula debe tener 7 u 8 dígitos");
-      data["cedula"] = clean;
-    }
-
-    ["telefono", "telefono2", "telefono3"].forEach(name => {
-      if (name in data && data[name]) {
-        const clean = (data[name] || "").replace(/\D/g, "");
-        if (clean.length !== 7) return mostrarError(`${name} debe tener exactamente 7 dígitos`);
-        data[name] = clean;
+    const limpiarBtn = document.createElement("button");   // 👈 aquí estaba el error
+    limpiarBtn.type = "button";
+    limpiarBtn.textContent = "Limpiar";
+    limpiarBtn.className = "btn btn-primary";
+    limpiarBtn.addEventListener("click", () => {
+      console.log("🧹 Botón Limpiar: reInicializarFormulario()");
+      if (typeof window.reInicializarFormulario === "function") {
+        window.reInicializarFormulario();
+      } else {
+        console.error("❌ reInicializarFormulario no está definida en window");
       }
     });
 
-    if ("rif" in data) {
-      const rif = normalizarRIF(data["rif"]);
-      if (!rif) return mostrarError("RIF inválido (Formato: J/V/E + 9 dígitos)");
-      data["rif"] = rif;
+    const buttonGroup = document.createElement("div");
+    buttonGroup.className = "form-buttons";
+    buttonGroup.appendChild(submitBtn);
+    buttonGroup.appendChild(limpiarBtn);
+    form.appendChild(buttonGroup);
+
+    // Insertar formulario
+    const contenedor = document.getElementById("contenedor-formulario");
+    contenedor.innerHTML = "";
+    contenedor.appendChild(form);
+
+    // POBLAR LISTAS (CODs, selects) y enlazar dependencias y comportamientos dinámicos
+    try {
+      poblarListasGlobales(listas);
+      enlazarDependencias(listas);
+      enlazarOfertaAceptada();
+    } catch (e) {
+      console.warn("⚠️ poblarListasGlobales/enlazarDependencias falló:", e);
     }
 
-    if ("montopago" in data) data["montopago"] = formatearMonto(data["montopago"]);
-    else data["montopago"] = "0,00";
-
-    // Concatenar COD + TEL (ya tienes la lógica)
-    const concatMap = [
-      { cod: "cod", tel: "telefono", out: "telefono" },
-      { cod: "cod2", tel: "telefono2", out: "telefono2" },
-      { cod: "cod3", tel: "telefono3", out: "telefono3" }
-    ];
-    for (const { cod, tel, out } of concatMap) {
-      if (data[cod] && data[tel]) {
-        const comb = concatCodTelefono(data[cod], data[tel]);
-        if (!comb) return mostrarError(`Concatenación inválida: ${cod} + ${tel}`);
-        data[out] = comb;
-      }
-    }
-
-    // Log en cliente antes de enviar para depuración (verás en consola del navegador)
-    console.log("🧾 [ENVIANDO] Datos a enviar a servidor:", data);
-
-    google.script.run
-      .withSuccessHandler(function(res) {
-        console.log("✅ Respuesta servidor:", res);
-        mostrarToast("Demanda cargada con éxito", "success");
-        // dejar mensaje overlay (4s) y reset parcial
-        setTimeout(() => { /* opcional: form.reset(); */ }, 4500);
-      })
-      .withFailureHandler(function(err) {
-        console.error("❌ Error servidor:", err);
-        mostrarToast("Error guardando demanda", "error");
-      })
-      .cargarDemanda(data);
+    form.addEventListener("submit", enviarCargaDemanda);
+    console.log("✅ Formulario renderizado y listener de envío asociado");
   }
 
-  function mostrarError(msg) {
-    console.error("❌ [VALIDACIÓN]", msg);
-    // muestro toast de error y detengo
-    mostrarToast(msg, "error");
-  }
+// ============================
+// 🚀 INICIALIZACIÓN INMEDIATA
+// ============================
+(function initCargarDemanda() {
+  mostrarLoader(); // ⏳ Mostrar loader al inicio
 
-  // ============================
-  // 🚀 INICIALIZACIÓN INMEDIATA
-  // ============================
-  (function initCargarDemanda() {
-    google.script.run
-      .withSuccessHandler(function(listas) {
-        try {
-          // renderizar formulario (esto va a llamar poblarListasGlobales después)
-          renderFormulario(listas || {});
-        } catch (e) {
-          console.error("❌ Error renderizando formulario:", e);
-          renderFormulario({});
-        }
-      })
-      .withFailureHandler(err => {
-        console.error("❌ Error al cargar ListasFijas:", err);
+  google.script.run
+    .withSuccessHandler(function(listas) {
+      try {
+        // renderizar formulario (esto va a llamar poblarListasGlobales después)
+        renderFormulario(listas || {});
+
+        // 🔹 Ocultar loader solo después de renderizar
+        ocultarLoader();
+      } catch (e) {
+        console.error("❌ Error renderizando formulario:", e);
         renderFormulario({});
-      })
-      .getListasFijas();
+        ocultarLoader(); // ❌ Ocultar aunque falle
+      }
+    })
+    .withFailureHandler(err => {
+      console.error("❌ Error al cargar ListasFijas:", err);
+      renderFormulario({});
+      ocultarLoader(); // ❌ Ocultar aunque falle
+    })
+    .getListasFijas();
   })();
 </script>
 
@@ -817,30 +1123,39 @@
   /* Grupo teléfono: COD + número (ya integrado) */
   .telefono-group { display:flex; gap:0; align-items:center; border-radius:8px; overflow:visible; }
 
+  /* ============================
+   ✅ VALIDADORES DESACTIVADOS
+  ============================ */
   /* modern validator: pequeño círculo con icono blanco */
-  .estado {
-    width:18px; height:18px; border-radius:50%;
-    display:inline-flex; align-items:center; justify-content:center;
-    position:absolute; top:8px; right:10px;
-    font-size:12px; line-height:1; color:transparent;
-  }
-  .estado.valido {
-    background: #28a745; /* verde moderno */
-  }
-  .estado.valido::after {
-    content: "✓"; color: #fff; font-size:12px;
-  }
-  .estado.invalido {
-    background: #b00020;
-  }
-  .estado.invalido::after {
-    content: "✕"; color: #fff; font-size:12px;
-  }
 
-  /* Estados visuales en bordes (mantenemos) */
-  .campo input.valido, .campo select.valido { border-color: #28a745; box-shadow: 0 0 0 4px rgba(40,167,69,0.06); }
-  .campo input.invalido, .campo select.invalido { border-color: #b00020; box-shadow: 0 0 0 4px rgba(176,0,32,0.06); }
+.estado {
+  width:18px; height:18px; border-radius:50%;
+  display:inline-flex; align-items:center; justify-content:center;
+  position:absolute; top:8px; right:10px;
+  font-size:12px; line-height:1; color:transparent;
+}
+.estado.valido {
+  background: #28a745;
+}
+.estado.valido::after {
+  content: "✓"; color: #fff; font-size:12px;
+}
+.estado.invalido {
+  background: #b00020;
+}
+.estado.invalido::after {
+  content: "✕"; color: #fff; font-size:12px;
+}
 
+.campo input.valido, .campo select.valido {
+  border-color: #28a745;
+  box-shadow: 0 0 0 4px rgba(40,167,69,0.06);
+}
+.campo input.invalido, .campo select.invalido {
+  border-color: #b00020;
+  box-shadow: 0 0 0 4px rgba(176,0,32,0.06);
+}
+  
   /* error help */
   .error { font-size:12px; color:#b00020; margin-top:4px; }
 
@@ -857,4 +1172,21 @@
   .btn-primary { background: var(--color-primary); color:#fff; padding:8px 14px; min-width:140px; margin:12px auto 0 auto; display:block; border-radius:8px; font-weight:700; }
 
   /* toast (cd-toast) se inyecta dinámicamente */
+  
+  /* 🔒 Neutralizar validadores visuales sin romper la lógica - ELIMINAR ESTE COMENTARIO PARA ACTIVAR VALIDADOR*/ 
+  .campo input.valido,
+  .campo select.valido,
+  .campo input.invalido,
+  .campo select.invalido {
+    border-color: var(--color-border, #ccc) !important;
+    box-shadow: none !important;
+  }
+
+  .estado,
+  .estado.valido,
+  .estado.invalido {
+    display: none !important;
+    background: none !important;
+    content: none !important;
+  }
 </style>
