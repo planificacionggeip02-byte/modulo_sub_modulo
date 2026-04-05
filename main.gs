@@ -314,3 +314,46 @@ function logDebug(msg) {
   console.log("DEBUG: " + msg);
   Logger.log(msg);
 }
+
+// ============================================================
+// 🔍 BUSCAR CLIENTE POR RIF (Para auto-rellenado Checkbox)
+// ============================================================
+function buscarClientePorRIF(rifBuscado) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  
+  if (data.length < 2) return null;
+
+  const headers = data[0];
+  // Normalizamos igual que tu cargarDemanda
+  const headersNormalizados = headers.map(h => (h || "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_]/g, "").toLowerCase());
+  
+  const colRifIndex = headersNormalizados.indexOf("rif");
+  if (colRifIndex === -1) return null;
+
+  const buscadoLimpio = rifBuscado.toString().replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+
+  for (let i = data.length - 1; i >= 1; i--) {
+    const valorCelda = data[i][colRifIndex].toString().replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    
+    if (valorCelda === buscadoLimpio) {
+      console.log("✅ Match encontrado en fila " + (i + 1));
+      
+      const cliente = {};
+      headersNormalizados.forEach((key, index) => {
+        // 🔑 EL TRUCO: Convertimos todo a String para que no de NULL al viajar al HTML
+        let valor = data[i][index];
+        
+        if (valor instanceof Date) {
+          cliente[key] = Utilities.formatDate(valor, Session.getScriptTimeZone(), "dd/MM/yyyy");
+        } else {
+          cliente[key] = (valor === null || valor === undefined) ? "" : valor.toString();
+        }
+      });
+      
+      return cliente; // Ahora sí viajará con datos
+    }
+  }
+  return null;
+}
