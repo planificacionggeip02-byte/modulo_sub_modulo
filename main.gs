@@ -211,7 +211,6 @@ function cargarDemanda(datos) {
   // ============================================================
   // ✅ CAMPOS AUTOMÁTICOS — AHORA EN EL LUGAR CORRECTO
   // ============================================================
-  datos.numero = "1 - Demanda"; 
   datos["tipo_data"] = "Nuevo";
   datos["usuario_registro"] = getUserEmail();
   datos["fecha_registro"] = Utilities.formatDate(
