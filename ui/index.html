@@ -13,11 +13,11 @@
   </script>
 
   <!-- Estilos externos -->
-  <style>
+<style>
     <?!= include('style'); ?>
   </style>
-
-  <?!= include('ui/mapa_data'); ?>
+  
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
 
@@ -88,6 +88,7 @@
       <li onclick="cargarSubmodulo('editar_usuario', 'Editar Usuario')">Editar Usuario</li>
     </ul>
   </li>
+
   <!-- Análisis de Riesgo -->
   <li class="nav-item">
     <div class="nav-link" onclick="toggleMenu(this)" data-module="analisis_riesgo_mo">
