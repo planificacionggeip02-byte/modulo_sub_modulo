@@ -329,16 +329,11 @@ function mostrarToast(msg, tipo = "success") {
   });
   document.body.appendChild(t);
 
-  setTimeout(() => { t.style.opacity = "0"; }, 4000);
-  setTimeout(() => {
+setTimeout(() => {
     t.remove();
     overlay.remove();
-    console.log("✅ Toast cerrado: ejecutando reInicializarFormulario()");
-    if (typeof window.reInicializarFormulario === "function") {
-      window.reInicializarFormulario();
-    } else {
-      console.error("❌ reInicializarFormulario no está definida en window");
-    }
+    // 🛑 ELIMINAMOS EL RESET DE AQUÍ. El toast solo debe mostrar el mensaje.
+    console.log("✅ Toast cerrado: " + msg);
   }, 4500);
 }
 
@@ -427,28 +422,42 @@ function enviarCargaDemanda(event, origen = "directo") {
       }
     }
 
-  // 🔍 LOG FINAL ANTES DEL SERVIDOR
-    console.log("4. 🧾 OBJETO FINAL que sale al servidor:", data);
+// 🔍 LOG FINAL ANTES DEL SERVIDOR
+  console.log("4. 🧾 OBJETO FINAL que sale al servidor:", data);
 
-    google.script.run
-      .withSuccessHandler(function(res) {
-        console.log("✅ Respuesta servidor:", res);
-        if (!res.ok) {
-          mostrarErrorCampo(res.campo, res.mensaje);
-          return;
+  google.script.run
+    .withSuccessHandler(function(res) {
+      console.log("✅ Respuesta servidor:", res);
+      
+      if (!res.ok) {
+        mostrarErrorCampo(res.campo, res.mensaje);
+        return;
+      }
+
+      // 1. Mostramos el mensaje de éxito
+      mostrarToast("Demanda cargada con éxito", "success");
+
+      // 2. 🚀 EL RESET: Solo ocurre aquí, cuando se guardó de verdad.
+      // Esperamos 1.5 segundos para que el usuario vea el toast antes de que se limpie.
+      setTimeout(() => {
+        console.log("🧹 Limpiando formulario tras guardado exitoso...");
+        if (typeof window.reInicializarFormulario === "function") {
+          window.reInicializarFormulario();
+        } else {
+          // Si por alguna razón la función global falla, usamos el reset nativo
+          document.getElementById("formCargaDemanda").reset();
         }
-        mostrarToast("Demanda cargada con éxito", "success");
-      })
-      .withFailureHandler(function(err) {
-        console.error("❌ Error servidor:", err);
-        mostrarToast("Error guardando demanda", "error");
-      })
-      .cargarDemanda(data);
-  }
+      }, 1500); 
+    })
+    .withFailureHandler(function(err) {
+      console.error("❌ Error servidor:", err);
+      mostrarToast("Error guardando demanda", "error");
+    })
+    .cargarDemanda(data);
+}
 
 function mostrarError(msg) {
   console.error("❌ [VALIDACIÓN]", msg);
-  // muestro toast de error y detengo
   mostrarToast(msg, "error");
 }
 
@@ -478,8 +487,7 @@ function mostrarErrorCampo(campo, mensaje) {
 }
 
 // ============================
-  // 🧱 CONSTRUCTORES DE CAMPOS
-  // (Conservé tu estructura y comentarios; sólo ajusté lo necesario)
+  // 🧱 CONSTRUCTORES DE CAMPOS  (Conservé tu estructura y comentarios; sólo ajusté lo necesario)
   // ============================
   function crearCampoTexto(labelText, name, required) {
     const wrap = document.createElement("div");
@@ -659,12 +667,14 @@ function mostrarErrorCampo(campo, mensaje) {
     select.addEventListener("change", validar);
 
 // ==========================================
-    // 🔍 LÓGICA DEL CHECKBOX: AUTO-RELLENAR (Versión Nativa)
+    // 🔍 LÓGICA DEL CHECKBOX: AUTO-RELLENAR (Versión Nativa + Loader)
     // ==========================================
+    
+    // 👇 Estas dos líneas son vitales y seguro se borraron al pegar 👇
     const checkboxInfo = wrap.querySelector("#usar_info_cliente");
     const labelCheckbox = wrap.querySelector('label[for="usar_info_cliente"]');
     
-    checkboxInfo.addEventListener("change", function() {
+    checkboxInfo.addEventListener("change", async function() {
       // Limpiamos errores previos del navegador siempre
       select.setCustomValidity("");
       input.setCustomValidity("");
@@ -677,38 +687,54 @@ function mostrarErrorCampo(campo, mensaje) {
         // 1️⃣ VALIDACIÓN: Si falta algo, lanzamos la burbuja nativa
         if (!valorTipo || valorNumero.length !== 9) {
           this.checked = false; 
-          
           const campoDestino = !valorTipo ? select : input;
           campoDestino.setCustomValidity("Por favor, ingresa el RIF completo (Letra y 9 dígitos)");
-          campoDestino.reportValidity(); // Dispara la burbuja que te gusta
+          campoDestino.reportValidity(); 
           return;
         }
 
-        // 2️⃣ ESTADO DE CARGANDO (Usa tu CSS existente)
-        // Guardamos el texto para volver a ponerlo después
-        const textoOriginal = "Usar información del cliente (Si ya existe)";
-        
-        // Aquí activamos tu cargando. 
-        // Si tu CSS usa una clase, cámbiala aquí (ej: labelCheckbox.classList.add("tu-clase-cargando"))
-        labelCheckbox.innerHTML = `<span class="spinner-mini"></span> Buscando...`; 
-        labelCheckbox.style.opacity = "0.7";
+        // 2️⃣ ACTIVAMOS TU LOADER DE PANTALLA COMPLETA
+        if (typeof mostrarLoader === "function") mostrarLoader();
 
-        console.log(`Iniciando búsqueda para: ${valorTipo}${valorNumero}`);
+        const rifAEnviar = valorTipo + valorNumero;
+        console.log("📡 [FRONTEND] Enviando a buscar este RIF:", rifAEnviar);
 
         // 3️⃣ LLAMADA AL SERVIDOR
-        // Cuando terminemos la búsqueda, deberás devolver el label a su estado normal:
-        /*
-          google.script.run
-            .withSuccessHandler((res) => {
-               labelCheckbox.innerHTML = textoOriginal;
-               labelCheckbox.style.opacity = "1";
-               if(res) { llenarFormulario(res); }
-            })
-            .buscarCliente(valorTipo + valorNumero);
-        */
+        google.script.run
+          .withSuccessHandler(async (res) => { 
+            // Manejo de errores o RIF no encontrado
+            if (res && res.error) {
+              if (typeof ocultarLoader === "function") ocultarLoader();
+              mostrarToast(res.error, "error");
+              checkboxInfo.checked = false;
+              return;
+            } else if (!res) {
+              if (typeof ocultarLoader === "function") ocultarLoader();
+              mostrarToast("No se encontró información para este RIF", "error");
+              checkboxInfo.checked = false;
+              return;
+            }
+
+            // ⏳ Esperamos pacientemente a que la cascada milimétrica termine
+            await llenarFormularioCliente(res); 
+
+            // ✅ Todo listo, ocultamos el Loader
+            if (typeof ocultarLoader === "function") ocultarLoader();
+          })
+          .withFailureHandler((err) => {
+            console.error("❌ [FRONTEND] Error crítico:", err);
+            if (typeof ocultarLoader === "function") ocultarLoader();
+            mostrarToast("Error en la búsqueda", "error");
+            checkboxInfo.checked = false;
+          })
+          .buscarClientePorRIF(rifAEnviar);
+
+      } else {
+        // 4️⃣ CASO DESMARCADO: Limpiamos los datos
+        limpiarDatosPorUncheck();
       }
     });
-    
+
     return wrap;
   }
 
@@ -1171,6 +1197,116 @@ function mostrarErrorCampo(campo, mensaje) {
     form.addEventListener("submit", enviarCargaDemanda);
     console.log("✅ Formulario renderizado y listener de envío asociado");
   }
+
+// ============================================================
+// 🧹 FUNCIÓN DE LIMPIEZA (Regla del Uncheck)
+// ============================================================
+function limpiarDatosPorUncheck() {
+  console.log("🧹 Checkbox desmarcado: Limpiando información de Cliente y Personal...");
+
+  // 1. Mapa exacto de campos a limpiar según tu instrucción
+  const camposCliente = ["cliente", "calle", "edificio", "piso", "local", "region", "estado", "municipio", "gerenteregion", "ciudad", "sector", "cono", "huella"];
+  const camposPersonal = ["nombrecontacto", "cedula", "correo", "cod", "telefono", "cod2", "telefono2", "cod3", "telefono3"];
+  
+  const todosLosCampos = [...camposCliente, ...camposPersonal];
+
+  todosLosCampos.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.value = ""; // Vaciamos el valor
+      el.classList.remove("valido"); // Quitamos el borde verde si lo tiene
+    }
+  });
+
+  // 2. Disparamos el 'change' en Región para que limpie en cascada los Estados y Municipios
+  const regionSel = document.getElementById("region");
+  if (regionSel) regionSel.dispatchEvent(new Event('change'));
+}
+
+  // ============================================================
+  // 🪄 FUNCIÓN PARA LLENAR EL FORMULARIO (Regla de Tiempos y Teléfonos)
+  // ============================================================
+  // Función auxiliar para esperar a que un select tenga la opción disponible (Milimétrica)
+async function esperarYSetearSelect(id, valor, intentosMax = 50) {
+  const el = document.getElementById(id);
+  if (!el || !valor) return;
+
+  for (let i = 0; i < intentosMax; i++) {
+    const existe = Array.from(el.options).some(opt => opt.value === valor);
+    if (existe) {
+      el.value = valor;
+      el.dispatchEvent(new Event('change')); // Disparamos el siguiente nivel de la cascada
+      console.log(`✅ [PROCESADO] ${id} fijado en: ${valor}`);
+      return;
+    }
+    // Esperamos 100ms antes del siguiente intento
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  console.warn(`⚠️ [TIMEOUT] No se encontró '${valor}' en el select '${id}'`);
+}
+
+// LA FUNCIÓN MAESTRA
+async function llenarFormularioCliente(datos) {
+  if (!datos) return;
+  console.log("🚀 Iniciando Rellenado Milimétrico...", datos);
+
+  // 1. Grupo Cliente e Información General (Mapeo 1:1)
+  const camposSimples = [
+    "cliente", "calle", "edificio", "piso", "local", "ciudad", 
+    "sector", "cono", "huella", "direccioninstalacion", "observacionventas"
+  ];
+  
+  // 2. Grupo Personal (Incluye Cédula y Correo)
+  const camposPersonal = ["nombrecontacto", "cedula", "correo"];
+  
+  [...camposSimples, ...camposPersonal].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && datos[id] !== undefined) {
+      el.value = datos[id];
+      el.classList.add("valido");
+    }
+  });
+
+  // 3. REGLA DE TELÉFONOS (3 para COD, 7 para Número)
+  const tels = [
+    { num: "telefono", cod: "cod" },
+    { num: "telefono2", cod: "cod2" },
+    { num: "telefono3", cod: "cod3" }
+  ];
+
+  tels.forEach(t => {
+    let val = (datos[t.num] || "").toString().replace(/\D/g, "");
+    if (val.length >= 10) {
+      const elCod = document.getElementById(t.cod);
+      const elNum = document.getElementById(t.num);
+      
+      const parteCod = val.slice(0, 3); // Los 3 primeros
+      const parteNum = val.slice(3, 10); // Los 7 restantes
+      
+      // Intentamos poner el COD (con y sin el 0 inicial por si acaso)
+      if (elCod) {
+        elCod.value = "0" + parteCod; 
+        if (!elCod.value) elCod.value = parteCod; // Backup si tu select no usa el 0
+      }
+      if (elNum) elNum.value = parteNum;
+    }
+  });
+
+  // 4. CASCADA INTELIGENTE (Región -> Estado -> Municipio/Gerente)
+  const regionSel = document.getElementById("region");
+  if (regionSel && datos["region"]) {
+    regionSel.value = datos["region"];
+    console.log("📍 Seteando Región...");
+    regionSel.dispatchEvent(new Event('change'));
+
+    // Esperamos a que los ESTADOS carguen
+    await esperarYSetearSelect("estado", datos["estado"]);
+    
+    // Esperamos a que los MUNICIPIOS y GERENTES carguen
+    await esperarYSetearSelect("municipio", datos["municipio"]);
+    await esperarYSetearSelect("gerenteregion", datos["gerenteregion"]);
+  }
+}
 
 // ============================
 // 🚀 INICIALIZACIÓN INMEDIATA
