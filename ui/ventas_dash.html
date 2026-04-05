@@ -1,18 +1,13 @@
 <div id="contenedor-ventas-dash" style="padding: 10px 20px;">
 
   <style>
-    /* ==========================================
-       🎨 ESTILOS GENERALES Y FILAS
-       ========================================== */
     .seccion-dash { background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 20px; margin-bottom: 20px; border: 1px solid #dee2e6; }
     .titulo-seccion { font-size: 0.95rem; font-weight: bold; color: #1a2b4c; text-transform: uppercase; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
     .form-control { border-radius: 4px; border: 1px solid #ced4da; padding: 6px 10px; font-size: 0.85rem; width: 100%; }
 
-    /* FILA 1: FILTROS */
     .grid-filtros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
     .filtro-group label { font-size: 0.75rem; font-weight: bold; color: #666; display: block; margin-bottom: 5px; }
 
-    /* FILA 2: KPIs */
     .grid-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
     .kpi-card { padding: 20px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
     .kpi-navy { background: #1a2b4c; color: white; }
@@ -20,25 +15,65 @@
     .kpi-light { background: #ffffff; color: #1a2b4c; border: 2px solid #008080; }
     .kpi-valor { margin: 5px 0 0 0; font-size: 2.2rem; font-weight: bold; }
 
-    /* FILA 3: MAPA (SILUETAS REALES) */
-    .mapa-gigante-container { width: 100%; height: 550px; display: flex; justify-content: center; align-items: center; background: #f8f9fa; border-radius: 8px; position: relative; overflow: hidden; }
-    #mapa-svg { width: 100%; height: 100%; max-width: 900px; }
+/* --- CONTENEDOR DEL MAPA (CORREGIDO) --- */
+.mapa-gigante-container { 
+    width: 100%; 
+    height: 500px; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    background: #f8f9fa; 
+    border-radius: 8px; 
+    position: relative; 
+    overflow: hidden; 
+}
     
-    /* Fronteras Reales */
-    .zona-estado { fill: #e5e7eb; stroke: #ffffff; stroke-width: 1.5px; cursor: pointer; transition: all 0.2s ease; }
-    .zona-estado:hover { fill: #b3e0e0; stroke: #008080; }
-    .zona-activa { fill: rgba(0, 128, 128, 0.4) !important; stroke: #008080 !important; stroke-width: 2px !important; }
+/* NUEVO: Estilos para el SVG que inyectaremos directamente en el HTML 
+*/
+#mapa-fiel svg {
+    width: 100%;
+    height: 100%;
+    max-width: 700px;
+    /* Asegura que el SVG escale correctamente dentro del contenedor */
+    object-fit: contain; 
+}
+
+/* Opcional: Estilo para cuando pases el ratón por encima de un estado */
+.estado-interactivo:hover {
+    fill: #008080 !important; /* Cambia a tu color preferido */
+    transition: fill 0.3s ease;
+    cursor: pointer;
+}
     
-    /* Números y Callouts */
-    .numero-mapa { font-family: 'Segoe UI', sans-serif; font-size: 16px; font-weight: 900; fill: #1a2b4c; pointer-events: none; text-anchor: middle; text-shadow: 1px 1px 2px rgba(255,255,255,0.8); }
-    .numero-cero { fill: #a0aec0; font-size: 13px; font-weight: normal; }
-    .numero-destacado { fill: #e91e63; font-size: 18px; } 
-    .linea-callout { stroke: #a0aec0; stroke-width: 1.2; stroke-dasharray: 2, 2; pointer-events: none; }
+    /* Puntos sobre el mapa (invisibles, se encienden con datos) */
+    .punto-estado {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: rgba(233, 30, 99, 0.9); /* Rosado fuerte para destacar */
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        font-size: 12px;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        cursor: pointer;
+        opacity: 0;
+        transition: all 0.3s;
+    }
+    
+    .punto-estado.con-datos {
+        opacity: 1;
+    }
 
-    /* Tooltip */
-    #tooltip-mapa { position: absolute; background: rgba(26, 43, 76, 0.95); color: white; padding: 10px 15px; border-radius: 6px; font-size: 0.85rem; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .punto-estado:hover {
+        transform: translate(-50%, -50%) scale(1.2);
+        background-color: #008080; /* Teal al pasar el mouse */
+    }
 
-    /* FILA 4: GRÁFICOS */
     .grid-graficos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   </style>
 
@@ -63,68 +98,72 @@
   </div>
 
   <div class="seccion-dash">
-    <div class="titulo-seccion">🗺️ 2. Distribución Geográfica Nacional</div>
-    <div class="mapa-gigante-container" id="contenedor-svg-venezuela">
+    <div class="titulo-seccion" style="display:flex; justify-content:space-between;">
+      <span>🗺️ 2. Distribución Geográfica Nacional</span>
+    </div>
+    
+    <div class="mapa-gigante-container">
       <div id="tooltip-mapa">
         <strong id="tt-estado" style="color:#00e5ff; display:block; margin-bottom:5px;">Estado</strong>
         Total: <span id="tt-numero" style="font-weight:bold;">0</span>
+      </div>
+      
+      <div id="mapa-fiel">
+        <div id="punto-Zulia" class="punto-estado" style="left: 20%; top: 25%;" onmousemove="mostrarTooltip(event, 'Zulia')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Falcón" class="punto-estado" style="left: 31%; top: 18%;" onmousemove="mostrarTooltip(event, 'Falcón')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Lara" class="punto-estado" style="left: 32%; top: 28%;" onmousemove="mostrarTooltip(event, 'Lara')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Yaracuy" class="punto-estado" style="left: 36%; top: 25%;" onmousemove="mostrarTooltip(event, 'Yaracuy')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Carabobo" class="punto-estado" style="left: 40%; top: 25%;" onmousemove="mostrarTooltip(event, 'Carabobo')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Aragua" class="punto-estado" style="left: 44%; top: 26%;" onmousemove="mostrarTooltip(event, 'Aragua')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Distrito-Capital" class="punto-estado" style="left: 47%; top: 23%;" onmousemove="mostrarTooltip(event, 'Distrito Capital')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Miranda" class="punto-estado" style="left: 49%; top: 24%;" onmousemove="mostrarTooltip(event, 'Miranda')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Vargas" class="punto-estado" style="left: 46%; top: 21%;" onmousemove="mostrarTooltip(event, 'Vargas')" onmouseout="ocultarTooltip()">0</div>
+        
+        <div id="punto-Táchira" class="punto-estado" style="left: 17%; top: 50%;" onmousemove="mostrarTooltip(event, 'Táchira')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Mérida" class="punto-estado" style="left: 21%; top: 43%;" onmousemove="mostrarTooltip(event, 'Mérida')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Trujillo" class="punto-estado" style="left: 25%; top: 35%;" onmousemove="mostrarTooltip(event, 'Trujillo')" onmouseout="ocultarTooltip()">0</div>
+        
+        <div id="punto-Barinas" class="punto-estado" style="left: 27%; top: 45%;" onmousemove="mostrarTooltip(event, 'Barinas')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Portuguesa" class="punto-estado" style="left: 33%; top: 36%;" onmousemove="mostrarTooltip(event, 'Portuguesa')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Cojedes" class="punto-estado" style="left: 38%; top: 32%;" onmousemove="mostrarTooltip(event, 'Cojedes')" onmouseout="ocultarTooltip()">0</div>
+        
+        <div id="punto-Guárico" class="punto-estado" style="left: 45%; top: 40%;" onmousemove="mostrarTooltip(event, 'Guárico')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Apure" class="punto-estado" style="left: 35%; top: 55%;" onmousemove="mostrarTooltip(event, 'Apure')" onmouseout="ocultarTooltip()">0</div>
+        
+        <div id="punto-Anzoátegui" class="punto-estado" style="left: 55%; top: 37%;" onmousemove="mostrarTooltip(event, 'Anzoátegui')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Sucre" class="punto-estado" style="left: 63%; top: 20%;" onmousemove="mostrarTooltip(event, 'Sucre')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Nueva-Esparta" class="punto-estado" style="left: 60%; top: 13%;" onmousemove="mostrarTooltip(event, 'Nueva Esparta')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Monagas" class="punto-estado" style="left: 65%; top: 35%;" onmousemove="mostrarTooltip(event, 'Monagas')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Delta-Amacuro" class="punto-estado" style="left: 75%; top: 43%;" onmousemove="mostrarTooltip(event, 'Delta Amacuro')" onmouseout="ocultarTooltip()">0</div>
+        
+        <div id="punto-Bolívar" class="punto-estado" style="left: 64%; top: 65%;" onmousemove="mostrarTooltip(event, 'Bolívar')" onmouseout="ocultarTooltip()">0</div>
+        <div id="punto-Amazonas" class="punto-estado" style="left: 44%; top: 80%;" onmousemove="mostrarTooltip(event, 'Amazonas')" onmouseout="ocultarTooltip()">0</div>
       </div>
     </div>
   </div>
 
   <div class="grid-graficos">
-    <div class="seccion-dash" style="margin-bottom:0;"><div class="titulo-seccion">📊 Estatus (Dona)</div><canvas id="chart-estatus" height="220"></canvas></div>
-    <div class="seccion-dash" style="margin-bottom:0;"><div class="titulo-seccion">📈 Evolución (Barras)</div><canvas id="chart-evolucion" height="220"></canvas></div>
+    <div class="seccion-dash" style="margin-bottom:0;"><div class="titulo-seccion">📊 Estatus (Dona)</div><canvas id="chart-estatus" height="200"></canvas></div>
+    <div class="seccion-dash" style="margin-bottom:0;"><div class="titulo-seccion">📈 Evolución (Barras)</div><canvas id="chart-evolucion" height="200"></canvas></div>
   </div>
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
-  // === VARIABLES GLOBALES (REGLA VAR) ===
+  // ==========================================
+  // 🧠 MOTOR DEL DASHBOARD
+  // ==========================================
+  
   var dataOriginal = dataOriginal || [];
   var dataFiltrada = dataFiltrada || [];
   var chartEstatus = null;
   var chartEvolucion = null;
-  
-  var REGIONES_MAP = {
-    "Andes": ["Mérida", "Táchira", "Trujillo"],
-    "Capital": ["Distrito Capital", "Miranda", "Vargas"],
-    "Centro": ["Aragua", "Carabobo"],
-    "Guayana": ["Amazonas", "Bolívar", "Delta Amacuro"],
-    "Los Llanos": ["Apure", "Barinas", "Cojedes", "Guárico", "Portuguesa"],
-    "Occidente": ["Falcón", "Lara", "Yaracuy", "Zulia"],
-    "Oriente": ["Anzoátegui", "Monagas", "Nueva Esparta", "Sucre"]
-  };
 
-  // Coordenadas ajustadas para el mapa real
-  var CONFIG_MAPA = {
-    "Amazonas": { x: 310, y: 500 },
-    "Anzoátegui": { x: 430, y: 220 },
-    "Apure": { x: 260, y: 310 },
-    "Aragua": { x: 310, y: 155, callout: { cx: 270, cy: 165 } },
-    "Barinas": { x: 180, y: 255 },
-    "Bolívar": { x: 460, y: 380 },
-    "Carabobo": { x: 280, y: 145 },
-    "Cojedes": { x: 260, y: 200 },
-    "Delta Amacuro": { x: 535, y: 255 },
-    "Distrito Capital": { x: 320, y: 110, callout: { cx: 370, cy: 75 } },
-    "Falcón": { x: 195, y: 105 },
-    "Guárico": { x: 335, y: 245 },
-    "Lara": { x: 195, y: 165 },
-    "Mérida": { x: 140, y: 235 },
-    "Miranda": { x: 355, y: 165 },
-    "Monagas": { x: 495, y: 195 },
-    "Nueva Esparta": { x: 475, y: 65, callout: { cx: 520, cy: 45 } },
-    "Portuguesa": { x: 215, y: 215 },
-    "Sucre": { x: 485, y: 115 },
-    "Táchira": { x: 105, y: 285 },
-    "Trujillo": { x: 155, y: 195 },
-    "Vargas": { x: 325, y: 100, callout: { cx: 350, cy: 50 } },
-    "Yaracuy": { x: 245, y: 145 },
-    "Zulia": { x: 105, y: 155 }
-  };
+  var LISTA_ESTADOS = [
+    "Amazonas", "Anzoátegui", "Apure", "Aragua", "Barinas", "Bolívar", "Carabobo", "Cojedes", 
+    "Delta Amacuro", "Distrito Capital", "Falcón", "Guárico", "Lara", "Mérida", "Miranda", 
+    "Monagas", "Nueva Esparta", "Portuguesa", "Sucre", "Táchira", "Trujillo", "Vargas", "Yaracuy", "Zulia"
+  ];
 
   function cargarDataOriginal() {
     if (typeof mostrarLoader === "function") mostrarLoader();
@@ -135,7 +174,6 @@
           dataOriginal = res.records;
           dataFiltrada = [...dataOriginal];
           inicializarFiltros();
-          pintarMapaLimpio(); 
           aplicarFiltrosDash();
         }
       })
@@ -172,7 +210,7 @@
     });
 
     actualizarKPIs();
-    renderizarDatosMapa(f.r);
+    renderizarDatosMapa();
     actualizarGraficos();
   }
 
@@ -184,84 +222,68 @@
     document.getElementById('kpi-conversion').textContent = (total > 0 ? ((aceptados / total) * 100).toFixed(1) : 0) + "%";
   }
 
-  // --- 🗺️ MAPA ---
-  function pintarMapaLimpio() {
-  var contenedor = document.getElementById('contenedor-svg-venezuela');
-  // Ajustamos el viewBox para que el mapa REAL se centre y no se vea cortado
-  var svgHTML = '<svg id="mapa-svg" viewBox="0 0 650 600" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:100%;">';
-  
-  // 1. Dibujamos las siluetas reales del mapa_data
-  for (var estado in VENEZUELA_PATHS) {
-    var d = VENEZUELA_PATHS[estado];
-    var idLimpio = estado.replace(/\s/g, '-');
-    svgHTML += '<path id="path-' + idLimpio + '" d="' + d + '" class="zona-estado" onmousemove="mostrarTooltip(event, \''+estado+'\')" onmouseout="ocultarTooltip()" />';
-  }
-  
-  // 2. Dibujamos los Números y Callouts (usando tus coordenadas validadas)
-  for (var estado in CONFIG_MAPA) {
-    var conf = CONFIG_MAPA[estado];
-    var idLimpio = estado.replace(/\s/g, '-');
-    var textX = conf.callout ? conf.callout.cx : conf.x;
-    var textY = conf.callout ? conf.callout.cy : conf.y;
-
-    if (conf.callout) {
-      svgHTML += '<line x1="'+conf.x+'" y1="'+conf.y+'" x2="'+conf.callout.cx+'" y2="'+conf.callout.cy+'" class="linea-callout" />';
-    }
-
-    svgHTML += '<text x="'+textX+'" y="'+(textY - 12)+'" style="font-size:10px; fill:#1a2b4c; font-weight:bold; text-anchor:middle; pointer-events:none;">'+estado.substring(0,3).toUpperCase()+'</text>';
-    svgHTML += '<text id="count-'+idLimpio+'" x="'+textX+'" y="'+(textY + 5)+'" class="numero-mapa numero-cero">0</text>';
-  }
-  
-  svgHTML += '</svg>';
-  contenedor.innerHTML = svgHTML;
-}
-
-  function renderizarDatosMapa(regionActiva) {
+  // ==========================================
+  // 🗺️ ENCENDIDO DE PUNTOS EN EL MAPA
+  // ==========================================
+  function renderizarDatosMapa() {
     var conteoPorEstado = {};
     dataFiltrada.forEach(function(item) { conteoPorEstado[item.estado] = (conteoPorEstado[item.estado] || 0) + 1; });
-    for (var estado in CONFIG_MAPA) {
+
+    LISTA_ESTADOS.forEach(function(estado) {
       var idLimpio = estado.replace(/\s/g, '-');
-      var txt = document.getElementById('count-' + idLimpio);
-      var zona = document.getElementById('path-' + idLimpio);
-      if (!txt || !zona) continue;
+      var punto = document.getElementById('punto-' + idLimpio);
+      if (!punto) return;
+
       var total = conteoPorEstado[estado] || 0;
-      txt.textContent = total;
-      txt.setAttribute("class", total > 0 ? "numero-mapa numero-destacado" : "numero-mapa numero-cero");
-      if (regionActiva !== "Todos" && REGIONES_MAP[regionActiva] && REGIONES_MAP[regionActiva].indexOf(estado) !== -1) {
-        zona.setAttribute("class", "zona-estado zona-activa");
+      punto.textContent = total;
+      punto.setAttribute("data-total", total);
+
+      // Si hay datos, encendemos el punto rosado. Si no, lo escondemos.
+      if (total > 0) {
+        punto.classList.add("con-datos");
       } else {
-        zona.setAttribute("class", "zona-estado");
+        punto.classList.remove("con-datos");
       }
-      zona.setAttribute("data-total", total);
-    }
+    });
   }
 
-  // --- 📈 GRÁFICOS ---
+  // --- INTERACTIVIDAD TOOLTIP ---
+  function mostrarTooltip(e, estado) {
+    var tooltipEl = document.getElementById('tooltip-mapa');
+    if(!tooltipEl) return;
+    
+    var total = e.target.getAttribute("data-total") || "0";
+    document.getElementById('tt-estado').textContent = estado;
+    document.getElementById('tt-numero').textContent = total;
+    
+    tooltipEl.style.opacity = "1";
+    
+    // Lo posicionamos cerca del mouse
+    var rect = document.getElementById('contenedor-svg-venezuela').getBoundingClientRect();
+    tooltipEl.style.left = (e.clientX - rect.left + 15) + 'px';
+    tooltipEl.style.top = (e.clientY - rect.top + 15) + 'px';
+  }
+  
+  function ocultarTooltip() { 
+    var tooltipEl = document.getElementById('tooltip-mapa');
+    if(tooltipEl) tooltipEl.style.opacity = "0"; 
+  }
+
+  // ==========================================
+  // 📈 GRÁFICOS
+  // ==========================================
   function actualizarGraficos() {
-    // Estatus
     var ctxE = document.getElementById('chart-estatus').getContext('2d');
-    var cE = {}; dataFiltrada.forEach(function(i){ var e = i.numero || "S/E"; cE[e] = (cE[e]||0)+1; });
+    var cE = {}; dataFiltrada.forEach(function(i){ var e = i.numero || "Sin Estatus"; cE[e] = (cE[e]||0)+1; });
     if(chartEstatus) chartEstatus.destroy();
     chartEstatus = new Chart(ctxE, { type: 'doughnut', data: { labels: Object.keys(cE), datasets: [{ data: Object.values(cE), backgroundColor: ['#1a2b4c','#008080','#e91e63','#a0aec0'] }] }, options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
 
-    // Evolución
     var ctxV = document.getElementById('chart-evolucion').getContext('2d');
     var cV = {}; dataFiltrada.forEach(function(i){ var m = i.mes || "S/M"; cV[m] = (cV[m]||0)+1; });
     if(chartEvolucion) chartEvolucion.destroy();
-    chartEvolucion = new Chart(ctxV, { type: 'bar', data: { labels: Object.keys(cV), datasets: [{ label: 'Registros', data: Object.values(cV), backgroundColor: '#008080' }] }, options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+    chartEvolucion = new Chart(ctxV, { type: 'bar', data: { labels: Object.keys(cV), datasets: [{ label: 'Registros', data: Object.values(cV), backgroundColor: '#008080' }] }, options: { maintainAspectRatio: false, plugins:{legend:{display:false}}, scales: { y: { beginAtZero: true } } } });
   }
 
-  // TOOLTIP
-  var tooltip = document.getElementById('tooltip-mapa');
-  function mostrarTooltip(e, estado) {
-    document.getElementById('tt-estado').textContent = estado;
-    document.getElementById('tt-numero').textContent = e.target.getAttribute("data-total") || "0";
-    tooltip.style.opacity = "1";
-    var rect = document.getElementById('contenedor-svg-venezuela').getBoundingClientRect();
-    tooltip.style.left = (e.clientX - rect.left + 15) + 'px';
-    tooltip.style.top = (e.clientY - rect.top + 15) + 'px';
-  }
-  function ocultarTooltip() { tooltip.style.opacity = "0"; }
-
+  // Arrancamos
   cargarDataOriginal();
 </script>
