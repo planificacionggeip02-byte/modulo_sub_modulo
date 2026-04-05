@@ -1,0 +1,135 @@
+<div id="contenedor-ventas-dash" class="dash-wrapper" style="padding: 20px;">
+
+  <div class="dash-filtros-card" style="background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px;">
+    <h4 style="margin-top: 0; color: #1a2b4c; border-bottom: 2px solid #008080; padding-bottom: 5px;">Filtros de Búsqueda</h4>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+      
+      <div>
+        <label style="font-size: 0.85em; font-weight: bold; color: #555;">Número (Estatus)</label>
+        <select id="filtro-numero" class="form-control form-control-sm" onchange="aplicarFiltrosDash()"><option value="Todos">Todos</option></select>
+      </div>
+
+      <div>
+        <label style="font-size: 0.85em; font-weight: bold; color: #555;">Región</label>
+        <select id="filtro-region" class="form-control form-control-sm" onchange="aplicarFiltrosDash()"><option value="Todos">Todas</option></select>
+      </div>
+
+      <div>
+        <label style="font-size: 0.85em; font-weight: bold; color: #555;">Estado</label>
+        <select id="filtro-estado" class="form-control form-control-sm" onchange="aplicarFiltrosDash()"><option value="Todos">Todos</option></select>
+      </div>
+
+      <div>
+        <label style="font-size: 0.85em; font-weight: bold; color: #555;">Huella</label>
+        <select id="filtro-huella" class="form-control form-control-sm" onchange="aplicarFiltrosDash()"><option value="Todos">Todas</option></select>
+      </div>
+
+      <div>
+        <label style="font-size: 0.85em; font-weight: bold; color: #555;">Sector</label>
+        <select id="filtro-sector" class="form-control form-control-sm" onchange="aplicarFiltrosDash()"><option value="Todos">Todos</option></select>
+      </div>
+
+      <div>
+        <label style="font-size: 0.85em; font-weight: bold; color: #555;">Situación</label>
+        <select id="filtro-situacion" class="form-control form-control-sm" onchange="aplicarFiltrosDash()"><option value="Todos">Todas</option></select>
+      </div>
+
+      <div>
+        <label style="font-size: 0.85em; font-weight: bold; color: #555;">Mes</label>
+        <select id="filtro-mes" class="form-control form-control-sm" onchange="aplicarFiltrosDash()"><option value="Todos">Todos</option></select>
+      </div>
+
+      <div>
+        <label style="font-size: 0.85em; font-weight: bold; color: #555;">Año</label>
+        <select id="filtro-ano" class="form-control form-control-sm" onchange="aplicarFiltrosDash()"><option value="Todos">Todos</option></select>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+    
+    <div style="background: #1a2b4c; color: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+      <h3 style="margin: 0; font-size: 1.1em; opacity: 0.8;">Total Demanda</h3>
+      <h1 id="kpi-total" style="margin: 10px 0 0 0; font-size: 2.5em;">0</h1>
+    </div>
+
+    <div style="background: #008080; color: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+      <h3 style="margin: 0; font-size: 1.1em; opacity: 0.8;">Aceptaciones</h3>
+      <h1 id="kpi-aceptacion" style="margin: 10px 0 0 0; font-size: 2.5em;">0</h1>
+    </div>
+
+    <div style="background: #e6f2f2; color: #1a2b4c; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #008080;">
+      <h3 style="margin: 0; font-size: 1.1em; opacity: 0.8;">Conversión</h3>
+      <h1 id="kpi-conversion" style="margin: 10px 0 0 0; font-size: 2.5em; color: #008080;">0%</h1>
+    </div>
+
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div style="background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+      <canvas id="chart-estatus"></canvas>
+    </div>
+    
+    <div style="background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+      <canvas id="chart-evolucion"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  // =========================================================
+  // 🧠 LÓGICA DEL DASHBOARD: CONEXIÓN AL SERVIDOR
+  // =========================================================
+  let dataOriginal = [];
+
+  function cargarDataOriginal() {
+    console.log("📡 Iniciando carga de datos del Dashboard...");
+    
+    // 1. Encendemos el loader (Acción pensante)
+    if (typeof mostrarLoader === "function") {
+      mostrarLoader();
+    } else {
+      console.warn("⚠️ Función mostrarLoader no encontrada");
+    }
+
+    // 2. Solicitud al servidor (main.gs)
+    google.script.run
+      .withSuccessHandler(function(res) {
+        // 3. Apagamos el loader al recibir respuesta (¡Esto quita el cargando!)
+        if (typeof ocultarLoader === "function") ocultarLoader();
+
+        if (res.ok) {
+          console.log("✅ Data recibida con éxito:", res.records.length, "registros");
+          dataOriginal = res.records;
+          
+          if (dataOriginal.length === 0) {
+            if (typeof mostrarToast === "function") mostrarToast("No hay datos para mostrar", "info");
+            return;
+          }
+
+          // Nota: Aquí programaremos el llenado de filtros y gráficos en el siguiente paso
+
+        } else {
+          console.error("❌ Error en el servidor:", res.error);
+          if (typeof mostrarToast === "function") mostrarToast("Error en la data: " + res.error, "error");
+        }
+      })
+      .withFailureHandler(function(err) {
+        // 4. Apagamos el loader incluso si hay un error crítico
+        if (typeof ocultarLoader === "function") ocultarLoader();
+        console.error("❌ Error crítico de conexión:", err);
+        if (typeof mostrarToast === "function") mostrarToast("Error de conexión", "error");
+      })
+      .getVentasDashData(); // Llama a la función que pegaste en main.gs
+  }
+
+  // 5. Ejecutar la función automáticamente al cargar este sub-módulo.
+  // Usamos un pequeño delay para asegurar que el HTML ya esté pintado en la pantalla.
+  setTimeout(cargarDataOriginal, 300);
+
+</script>
