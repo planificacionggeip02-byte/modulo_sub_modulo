@@ -737,3 +737,32 @@ form.pristine textarea:invalid {
 .campo .estado.invalido {
   color: #fff !important;
 }
+
+/* ============================================================
+🔘 BOTONES: EFECTO DE PULSACIÓN REAL (AGRESIVO Y NOTORIO)
+============================================================ */
+/* 1. Base para que la animación sea fluida y rápida */
+#btn-enviar-demanda, #btn-limpiar-demanda, .btn-submit, .btn-clear {
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  outline: none;
+  cursor: pointer;
+  border: none;
+}
+
+/* 2. EFECTO AL PRESIONAR: Escala de 0.90 (10% de reducción) */
+#btn-enviar-demanda:active, #btn-limpiar-demanda:active, 
+.btn-submit:active, .btn-clear:active {
+  transform: scale(0.90) !important; /* Ahora es el doble de notorio */
+  filter: brightness(0.7) !important; /* Se oscurece significativamente */
+  box-shadow: inset 0 8px 12px rgba(0,0,0,0.4) !important; /* Sombra interna profunda */
+}
+
+/* 3. Estado DESHABILITADO (Cuando el Loader está activo) */
+button:disabled {
+  background-color: #999 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  filter: grayscale(1) !important;
+  box-shadow: none !important;
+}
