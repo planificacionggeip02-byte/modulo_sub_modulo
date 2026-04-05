@@ -422,11 +422,73 @@ function enviarCargaDemanda(event, origen = "directo") {
       }
     }
 
-// 🔍 LOG FINAL ANTES DEL SERVIDOR
-  console.log("4. 🧾 OBJETO FINAL que sale al servidor:", data);
+    // ============================================================
+    // 🧠 REGLA DE ORO: CÁLCULO DE ESTATUS (CAMPO NÚMERO)
+    // ============================================================
+    
+    // 1. Cubetas de motivos (Fáciles de editar en el futuro)
+    const motivosAceptacion = [
+      "No se establece comunicación con el Cliente", "Posee Servicio de Cantv (Cobre y Telefonia)", 
+      "No se encontraba el Dueño", "Local Vacio", "Conectado a Residencial", 
+      "Local Alquilado", "Aun No Aperturan Local", "Navegando Ilan"
+    ];
+
+    const motivosRechazo = [
+      "Usuario no desea pagar la deuda", "No Indica Motivo", "Demora en la Instalación", 
+      "Tiene servicio en su Otro Local", "Mudanza de Local", "Contrató otro Proveedor", 
+      "Cierre de Empresa", "No desea por el Costo del Servicio", "Cierre De Local", 
+      "Pendiente por Renovar Alquiler"
+    ];
+
+    const motivosConstruccion = [
+      "Fuera De Huella", "Sin Factibilidad Constructiva"
+    ];
+
+    const motivosDemanda = [
+      "Por Canalización del Cliente", "Abordar Nuevamente"
+    ];
+
+    // 2. Lógica de decisión
+    let valorNumero = "Demanda"; // Valor base por defecto
+
+    // Capturamos las selecciones (Asegúrate de que los 'names' en tu HTML sean correctos)
+    const seleccionOferta = data["ofertaaceptada"]; 
+    const motivoSeleccionado = data["motivonoaceptacion"];
+
+    if (seleccionOferta === "Sí") {
+      valorNumero = "Aceptación";
+    } else if (seleccionOferta === "No") {
+      // Comparamos el motivo con nuestras cubetas
+      if (motivosAceptacion.includes(motivoSeleccionado)) {
+        valorNumero = "Aceptación";
+      } else if (motivosRechazo.includes(motivoSeleccionado)) {
+        valorNumero = "Aceptación Rechazada";
+      } else if (motivosConstruccion.includes(motivoSeleccionado)) {
+        valorNumero = "Construcción";
+      } else if (motivosDemanda.includes(motivoSeleccionado)) {
+        valorNumero = "Demanda";
+      } else {
+        // Si dice "No" pero no hay motivo o es un motivo no registrado
+        valorNumero = "Demanda"; 
+      }
+    }
+
+    // 3. Asignamos el valor calculado al objeto que viaja a Sheets
+    data["numero"] = valorNumero;
+    
+
+    // 🚀 ACTIVAR LOADER: Justo antes de enviar (Toda acción pensante)
+    if (typeof mostrarLoader === "function") mostrarLoader();
+
+      // ============================================================
+      // 🔍 LOG FINAL ANTES DEL SERVIDOR
+      console.log("4. 🧾 OBJETO FINAL que sale al servidor:", data);
 
   google.script.run
     .withSuccessHandler(function(res) {
+      // 🛑 APAGAR LOADER: Apenas responde el servidor
+      if (typeof ocultarLoader === "function") ocultarLoader();
+
       console.log("✅ Respuesta servidor:", res);
       
       if (!res.ok) {
@@ -434,26 +496,44 @@ function enviarCargaDemanda(event, origen = "directo") {
         return;
       }
 
-      // 1. Mostramos el mensaje de éxito
+      // 1. Mostrar mensaje de éxito
       mostrarToast("Demanda cargada con éxito", "success");
 
-      // 2. 🚀 EL RESET: Solo ocurre aquí, cuando se guardó de verdad.
-      // Esperamos 1.5 segundos para que el usuario vea el toast antes de que se limpie.
+      // 2. REESTABLECER Y SUBIR: 
+      // Lo hacemos después de un pequeño delay para que el usuario lea el Toast
       setTimeout(() => {
-        console.log("🧹 Limpiando formulario tras guardado exitoso...");
+        console.log("🧹 Ejecutando Limpieza y Scroll...");
+        
+        // Reset del formulario (usando tu función global)
         if (typeof window.reInicializarFormulario === "function") {
           window.reInicializarFormulario();
         } else {
-          // Si por alguna razón la función global falla, usamos el reset nativo
-          document.getElementById("formCargaDemanda").reset();
+          form.reset();
         }
+
+        // SCROLL AL INICIO: 
+        // Forzamos el scroll al inicio del contenedor principal del app
+        const mainContent = document.querySelector(".main-content");
+        if (mainContent) {
+          mainContent.scrollTo({ top: 0, behavior: "smooth" });
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        
+        // Desmarcar checkbox de RIF si existe
+        const checkRif = document.getElementById("usar_info_cliente");
+        if (checkRif) checkRif.checked = false;
+
       }, 1500); 
     })
     .withFailureHandler(function(err) {
+      // 🛑 APAGAR LOADER EN CASO DE FALLA
+      if (typeof ocultarLoader === "function") ocultarLoader();
+      
       console.error("❌ Error servidor:", err);
       mostrarToast("Error guardando demanda", "error");
     })
-    .cargarDemanda(data);
+    .cargarDemanda(data); // 🚀 Envío final al servidor
 }
 
 function mostrarError(msg) {
