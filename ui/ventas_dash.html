@@ -1,17 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Ventas</title>
 <style>
-        /* --- ESTILOS PARA OCULTAR PANTALLA DE CARGA --- */
-        #loading, #cargando, .loading, .loader, #preloader, .overlay {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-        }
 
         /* --- ESTILOS ORIGINALES DEL DASHBOARD --- */
         body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f9; }
@@ -180,16 +175,19 @@
         <div class="kpi-card-mini kpi-demanda">
             <div class="kpi-title">Demanda</div>
             <p class="kpi-valor" id="kpi-demanda">0</p>
+            <div class="kpi-conversion-badge" id="kpi-pct-demanda" title="% sobre el total">0%</div>
         </div>
 
         <div class="kpi-card-mini kpi-proceso">
             <div class="kpi-title">Construcción</div>
             <p class="kpi-valor" id="kpi-construccion">0</p>
+            <div class="kpi-conversion-badge" id="kpi-pct-construccion" title="% sobre el total">0%</div>
         </div>
 
         <div class="kpi-card-mini kpi-proceso">
             <div class="kpi-title">Navegando</div>
             <p class="kpi-valor" id="kpi-navegando">0</p>
+            <div class="kpi-conversion-badge" id="kpi-pct-navegando" title="% sobre el total">0%</div>
         </div>
 
         <div class="kpi-card-mini kpi-exito">
@@ -201,11 +199,13 @@
         <div class="kpi-card-mini kpi-perdida">
             <div class="kpi-title">Rechazada</div>
             <p class="kpi-valor" id="kpi-rechazada">0</p>
+            <div class="kpi-conversion-badge" id="kpi-pct-rechazada" title="% sobre el total">0%</div>
         </div>
 
         <div class="kpi-card-mini kpi-perdida">
             <div class="kpi-title">Retiro</div>
             <p class="kpi-valor" id="kpi-retiro">0</p>
+            <div class="kpi-conversion-badge" id="kpi-pct-retiro" title="% sobre el total">0%</div>
         </div>
 
     </div>
@@ -346,11 +346,78 @@
         </div>
         </div>
 
+<div id="modal-resumen" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9998; justify-content: center; align-items: center; backdrop-filter: blur(2px);">
+    <div style="background: white; padding: 20px; border-radius: 8px; width: 95%; max-width: 1100px; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a2b4c; padding-bottom: 10px; margin-bottom: 15px;">
+            <h3 style="margin: 0; color: #1a2b4c;">Resumen Global de Situaciones Actuales</h3>
+            <div>
+                <button onclick="abrirSelectorDescarga('Todas')" style="background: #107c41; color: white; border: none; padding: 8px 15px; cursor: pointer; font-weight: bold; border-radius: 4px; margin-right: 15px;">📊 Descargar Todo</button>
+                <button onclick="document.getElementById('modal-resumen').style.display='none'" style="background: #dc3545; color: white; border: none; padding: 8px 15px; cursor: pointer; font-weight: bold; border-radius: 4px;">X Cerrar</button>
+            </div>
+        </div>
+        <div id="contenido-modal-resumen" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;"></div>
+    </div>
+</div>
+
+<div id="modal-descarga" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 600px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #1a2b4c; padding-bottom: 10px; margin-bottom: 10px;">
+            <h3 id="titulo-modal-descarga" style="margin: 0; color: #1a2b4c;">Exportar a Excel</h3>
+            <button onclick="document.getElementById('modal-descarga').style.display='none'" style="background: #dc3545; color: white; border: none; padding: 5px 12px; cursor: pointer; font-weight: bold; border-radius: 4px;">X</button>
+        </div>
+        <p style="font-size: 0.9rem; color: #555;">Marca las casillas que deseas incluir en tu reporte. (Los campos obligatorios están bloqueados).</p>
+        
+        <div id="lista-campos-descarga" style="flex-grow: 1; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: #fafafa;">
+        </div>
+
+        <div style="margin-top: 15px; text-align: right;">
+            <button onclick="ejecutarDescargaPersonalizada()" style="background: #107c41; color: white; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 4px; font-size: 1rem;">
+                🚀 Generar Reporte
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="seccion-dash">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div class="titulo-seccion" style="margin-bottom: 0;">SITUACIÓN ACTUAL POR ESTADO Y HUELLA</div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span id="fecha-actualizacion" style="font-size: 0.85rem; color: #666; font-style: italic;"></span>
+            <button onclick="document.getElementById('modal-resumen').style.display='flex'" style="padding: 8px 15px; background-color: #1a2b4c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                👁️ Ver Detalle Global
+            </button>
+            <button onclick="descargarExcel()" style="padding: 8px 15px; background-color: #107c41; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                📊 Descargar
+            </button>
+        </div>
+    </div>
+    
+    <div style="max-height: 450px; overflow-y: auto; border: 1px solid #dee2e6;">
+        <table id="tabla-odn" style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: center;">
+            <thead style="position: sticky; top: 0; background-color: #1a2b4c; color: white; z-index: 10;">
+                <tr>
+                    <th style="padding: 12px; border: 1px solid #ddd;">ESTADO</th>
+                    <th style="padding: 12px; border: 1px solid #ddd;">HUELLA</th>
+                    <th id="th-navegando" style="padding: 12px; border: 1px solid #ddd;">NAVEGANDO</th>
+                    <th id="th-demanda" style="padding: 12px; border: 1px solid #ddd;">DEMANDA</th>
+                    <th id="th-retiro" style="padding: 12px; border: 1px solid #ddd;">RETIRO</th>
+                    <th id="th-construccion" style="padding: 12px; border: 1px solid #ddd;">CONSTRUCCIÓN</th>
+                    <th id="th-total" style="padding: 12px; border: 1px solid #ddd;">TOTAL SERVICIOS</th>
+                </tr>
+            </thead>
+            <tbody id="body-tabla-odn"></tbody>
+        </table>
+    </div>
+</div>
+
 <script>
   // ==========================================
   // 🧠 MOTOR DEL DASHBOARD - VERSIÓN CORREGIDA Y ACTUALIZADA
   // ==========================================
   
+    function formatoMiles(numero) {
+        return Number(numero).toLocaleString('de-DE');
+    }
   var dataOriginal = dataOriginal || [];
   var dataFiltrada = dataFiltrada || [];
   var chartEstatus = null;
@@ -363,17 +430,30 @@
   ];
 
   function cargarDataOriginal() {
-    google.script.run
-      .withSuccessHandler(function(res) {
-        if (res && res.ok) {
-          dataOriginal = res.records || [];
-          dataFiltrada = [...dataOriginal];
-          inicializarFiltros();
-          aplicarFiltrosDash();
-        }
-      })
-      .getVentasDashData();
-  }
+        mostrarLoader(); // Enciende el loader de forma segura
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.ok) {
+              dataOriginal = res.records || [];
+              dataFiltrada = [...dataOriginal];
+              inicializarFiltros();
+              aplicarFiltrosDash();
+              
+              ocultarLoader(); // Apagamos SOLO cuando ya se filtró y dibujó todo
+            } else {
+              console.error("La data vino vacía o con error");
+              ocultarLoader();
+            }
+          })
+          .withFailureHandler(function(err) {
+              // Si hay un error, nos avisa y quita el loader para no dejar la pantalla pegada
+              console.error("Fallo de conexión con el servidor:", err);
+              ocultarLoader();
+              alert("Error cargando los datos. Revisa la consola.");
+          })
+          .getVentasDashData();
+    }
 
   function inicializarFiltros() {
     var campos = {'filtro-numero':'numero','filtro-region':'region','filtro-estado':'estado','filtro-mes':'mes','filtro-ano':'ano','filtro-huella':'huella','filtro-sector':'sector','filtro-situacion':'situacion'};
@@ -411,6 +491,7 @@
     actualizarKPIs();
     renderizarDatosMapa();
     actualizarGraficos();
+    actualizarTablaODN();
   }
 
   // --- AQUÍ ESTÁ EL CAMBIO CLAVE (LÓGICA PARA LOS 7 CUADROS) ---
@@ -433,18 +514,31 @@
     let retiro = contar("Retiro");
     let construccion = contar("Construcción");
 
-    // 3. Cálculo de conversión basado en esos dos números
+    // 3. Cálculos de porcentajes 
+    // Aceptación se sigue calculando sobre la Demanda (como lo tenías)
     let conversion = (demanda > 0) ? ((aceptacion / demanda) * 100).toFixed(1) : 0;
+    
+    // Los demás se calculan sobre el Total Estatus
+    let pctDemanda = (totalEstatus > 0) ? ((demanda / totalEstatus) * 100).toFixed(1) : 0;
+    let pctConstruccion = (totalEstatus > 0) ? ((construccion / totalEstatus) * 100).toFixed(1) : 0;
+    let pctNavegando = (totalEstatus > 0) ? ((navegando / totalEstatus) * 100).toFixed(1) : 0;
+    let pctRechazada = (totalEstatus > 0) ? ((rechazada / totalEstatus) * 100).toFixed(1) : 0;
+    let pctRetiro = (totalEstatus > 0) ? ((retiro / totalEstatus) * 100).toFixed(1) : 0;
 
     // Asignación a las tarjetas
-    if(document.getElementById('kpi-total-estatus')) document.getElementById('kpi-total-estatus').textContent = totalEstatus;
-    if(document.getElementById('kpi-demanda')) document.getElementById('kpi-demanda').textContent = demanda;
-    if(document.getElementById('kpi-aceptacion')) document.getElementById('kpi-aceptacion').textContent = aceptacion;
-    if(document.getElementById('kpi-rechazada')) document.getElementById('kpi-rechazada').textContent = rechazada;
-    if(document.getElementById('kpi-navegando')) document.getElementById('kpi-navegando').textContent = navegando;
-    if(document.getElementById('kpi-retiro')) document.getElementById('kpi-retiro').textContent = retiro;
-    if(document.getElementById('kpi-construccion')) document.getElementById('kpi-construccion').textContent = construccion;
+    if(document.getElementById('kpi-total-estatus')) document.getElementById('kpi-total-estatus').textContent = formatoMiles(totalEstatus);
+    if(document.getElementById('kpi-demanda')) document.getElementById('kpi-demanda').textContent = formatoMiles(demanda);
+    if(document.getElementById('kpi-aceptacion')) document.getElementById('kpi-aceptacion').textContent = formatoMiles(aceptacion);
+    if(document.getElementById('kpi-rechazada')) document.getElementById('kpi-rechazada').textContent = formatoMiles(rechazada);
+    if(document.getElementById('kpi-navegando')) document.getElementById('kpi-navegando').textContent = formatoMiles(navegando);
+    if(document.getElementById('kpi-retiro')) document.getElementById('kpi-retiro').textContent = formatoMiles(retiro);
+    if(document.getElementById('kpi-construccion')) document.getElementById('kpi-construccion').textContent = formatoMiles(construccion);
     if(document.getElementById('kpi-conversion')) document.getElementById('kpi-conversion').textContent = conversion + "%";
+    if(document.getElementById('kpi-pct-demanda')) document.getElementById('kpi-pct-demanda').textContent = pctDemanda + "%";
+    if(document.getElementById('kpi-pct-construccion')) document.getElementById('kpi-pct-construccion').textContent = pctConstruccion + "%";
+    if(document.getElementById('kpi-pct-navegando')) document.getElementById('kpi-pct-navegando').textContent = pctNavegando + "%";
+    if(document.getElementById('kpi-pct-rechazada')) document.getElementById('kpi-pct-rechazada').textContent = pctRechazada + "%";
+    if(document.getElementById('kpi-pct-retiro')) document.getElementById('kpi-pct-retiro').textContent = pctRetiro + "%";
   }
 
   // ==========================================
@@ -590,13 +684,234 @@
 
   cargarDataOriginal();
 
-  // Seguro para quitar pantalla de carga
-  setTimeout(function() {
-      var IDs = ['loading', 'cargando', 'loader', 'preloader'];
-      IDs.forEach(function(id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; });
-      var overlays = document.querySelectorAll('.loading, .loader, .overlay, .cargando');
-      overlays.forEach(function(el) { el.style.display = 'none'; });
-  }, 2000);
+    function actualizarTablaODN() {
+        let grupos = {};
+        let globales = {
+            navegando: { total: 0, detalle: {} },
+            demanda: { total: 0, detalle: {} },
+            retiro: { total: 0, detalle: {} },
+            construccion: { total: 0, detalle: {} }
+        };
+
+        dataFiltrada.forEach(item => {
+            let nombreEstado = item.estado || "SIN ESTADO";
+            let nombreHuella = item.huella || "SIN HUELLA"; 
+            let llave = nombreEstado + "|" + nombreHuella;
+            
+            if(!grupos[llave]) {
+                grupos[llave] = { 
+                    estado: nombreEstado, huella: nombreHuella, navegando: 0, demanda: 0, retiro: 0, construccion: 0, total: 0,
+                    detalle: { navegando: {}, demanda: {}, retiro: {}, construccion: {} }
+                };
+            }
+
+            let valNum = (item.numero || "").toString().trim().toLowerCase();
+            let valSit = (item.situacion || "Sin detalle").toString().trim();
+
+            const sumarCruce = (objFila, objGlobal, cat) => {
+                objFila[cat]++;
+                objFila.total++;
+                objFila.detalle[cat][valSit] = (objFila.detalle[cat][valSit] || 0) + 1;
+                objGlobal[cat].total++;
+                objGlobal[cat].detalle[valSit] = (objGlobal[cat].detalle[valSit] || 0) + 1;
+            };
+
+            if(valNum === "navegando") sumarCruce(grupos[llave], globales, 'navegando');
+            else if(valNum === "demanda") sumarCruce(grupos[llave], globales, 'demanda');
+            else if(valNum === "retiro") sumarCruce(grupos[llave], globales, 'retiro');
+            else if(valNum === "construcción" || valNum === "construccion") sumarCruce(grupos[llave], globales, 'construccion');
+        });
+
+        // --- ACTUALIZAR TOTALES EN LOS TÍTULOS (Parentesis) ---
+        if(document.getElementById('th-navegando')) document.getElementById('th-navegando').innerHTML = `NAVEGANDO<br>(${formatoMiles(globales.navegando.total)})`;
+        if(document.getElementById('th-demanda')) document.getElementById('th-demanda').innerHTML = `DEMANDA<br>(${formatoMiles(globales.demanda.total)})`;
+        if(document.getElementById('th-retiro')) document.getElementById('th-retiro').innerHTML = `RETIRO<br>(${formatoMiles(globales.retiro.total)})`;
+        if(document.getElementById('th-construccion')) document.getElementById('th-construccion').innerHTML = `CONSTRUCCIÓN<br>(${formatoMiles(globales.construccion.total)})`;
+        if(document.getElementById('th-total')) {
+            let granTotal = globales.navegando.total + globales.demanda.total + globales.retiro.total + globales.construccion.total;
+            document.getElementById('th-total').innerHTML = `TOTAL SERVICIOS<br>(${formatoMiles(granTotal)})`;
+        }
+
+        // --- FUNCIÓN PARA EL SUBRAYADO CON POP-UP (MEJORADA) ---
+        const crearSubrayado = (total, detalleObj) => {
+            if (total === 0) return "0";
+            let listaHtml = "";
+            let items = Object.entries(detalleObj).sort((a,b) => b[1] - a[1]);
+            items.forEach(([sit, cant]) => {
+                listaHtml += `<div style="font-size: 0.75rem; padding: 4px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; gap: 10px;">
+                                <span>${sit}</span><b>${formatoMiles(cant)}</b>
+                              </div>`;
+            });
+
+            let id = "pop-" + Math.random().toString(36).substr(2, 9);
+            return `
+                <div style="position: relative; display: inline-block;">
+                    <span onmouseover="document.getElementById('${id}').style.display='block'" 
+                          onmouseout="document.getElementById('${id}').style.display='none'"
+                          style="text-decoration: underline; cursor: help; color: #0056b3; font-weight: 500;">
+                        ${formatoMiles(total)}
+                    </span>
+                    <div id="${id}" style="display:none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: white; border: 1px solid #1a2b4c; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 10px; z-index: 999; min-width: 200px; text-align: left; border-radius: 4px; margin-bottom: 8px;">
+                        ${listaHtml}
+                    </div>
+                </div>`;
+        };
+
+        let arrayResultados = Object.values(grupos).sort((a, b) => a.estado === b.estado ? a.huella.localeCompare(b.huella) : a.estado.localeCompare(b.estado));
+
+        let htmlBody = "";
+        arrayResultados.forEach(g => {
+            htmlBody += `<tr style="border-bottom: 1px solid #ddd; background-color: #fff;">
+                <td style="padding: 10px; text-align: left;">${g.estado}</td>
+                <td style="padding: 10px; text-align: left; font-weight: bold;">${g.huella}</td>
+                <td>${crearSubrayado(g.navegando, g.detalle.navegando)}</td>
+                <td>${crearSubrayado(g.demanda, g.detalle.demanda)}</td>
+                <td>${crearSubrayado(g.retiro, g.detalle.retiro)}</td>
+                <td>${crearSubrayado(g.construccion, g.detalle.construccion)}</td>
+                <td style="background: #f8f9fa; font-weight: bold;">${formatoMiles(g.total)}</td>
+            </tr>`;
+        });
+        document.getElementById('body-tabla-odn').innerHTML = htmlBody;
+
+    // DIBUJAR DETALLE GLOBAL (4 COLUMNAS CON BOTÓN) ---
+            const armarColumnaGlobal = (titulo, objCategoria, idCat) => {
+                let itemsHtml = "";
+                let desglose = Object.entries(objCategoria.detalle).sort((a, b) => b[1] - a[1]);
+                
+                desglose.forEach(([situacion, cantidad]) => {
+                    itemsHtml += `
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 5px 0; font-size: 0.75rem;">
+                        <span style="color: #555; padding-right: 5px;">${situacion}</span>
+                        <strong style="color: #1a2b4c;">${formatoMiles(cantidad)}</strong>
+                    </div>`;
+                });
+
+                return `
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #ddd; display: flex; flex-direction: column; min-width: 0;">
+                    <h5 style="margin: 0 0 10px 0; color: white; background: #1a2b4c; text-align: center; padding: 5px; border-radius: 3px; font-size: 0.8rem; line-height: 1.2;">
+                        ${titulo.toUpperCase()}<br>(${formatoMiles(objCategoria.total)})
+                    </h5>
+                    
+                    <button onclick="abrirSelectorDescarga('${idCat}')" style="margin-bottom: 10px; padding: 5px; background-color: #107c41; color: white; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 0.75rem;">
+                        📊 Descargar
+                    </button>
+
+                    <div style="flex-grow: 1; overflow-y: auto; max-height: 350px;">
+                        ${itemsHtml}
+                    </div>
+                </div>`;
+            };
+
+            // Inyectamos las 4 columnas pasando el nombre de la categoría como tercer parámetro
+            document.getElementById('contenido-modal-resumen').innerHTML = 
+                    armarColumnaGlobal("Navegando", globales.navegando, "Navegando") +
+                    armarColumnaGlobal("Demanda", globales.demanda, "Demanda") +
+                    armarColumnaGlobal("Retiro", globales.retiro, "Retiro") +
+                    armarColumnaGlobal("Construcción", globales.construccion, "Construcción");
+
+            document.getElementById('fecha-actualizacion').textContent = "Info al: " + new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+        }
+
+    // ==========================================
+    // FUNCIÓN DE DESCARGA EXCEL (FORMATO PROFESIONAL .XLSX)
+    // ==========================================
+    function descargarExcel() {
+        if(typeof XLSX === 'undefined') {
+            alert("El motor de Excel aún está cargando. Espera un segundo.");
+            return;
+        }
+
+        let tablaOriginal = document.getElementById("tabla-odn");
+        if(!tablaOriginal) return;
+
+        // Clonamos la tabla para limpiarla antes de exportar
+        let tablaClon = tablaOriginal.cloneNode(true);
+
+        // Eliminamos todos los divs de detalle para que el Excel solo tenga el número limpio
+        let celdasInteractivas = tablaClon.querySelectorAll("td");
+        celdasInteractivas.forEach(td => {
+            let spanNumero = td.querySelector("span");
+            if(spanNumero) {
+                let numeroLimpio = spanNumero.innerText.replace(/\./g, ''); // Quitamos puntos para que Excel lo vea como número
+                td.innerText = numeroLimpio;
+            }
+        });
+
+        // Crear el libro de Excel
+        let wb = XLSX.utils.table_to_book(tablaClon, {sheet: "Resumen_Ventas"});
+        
+        // Descargar con nombre profesional
+        XLSX.writeFile(wb, "Reporte_Situacion_Actual_Ventas.xlsx");
+    }
+
+      // ==========================================
+      // SISTEMA DE EXCEL "A LA CARTA"
+      // ==========================================
+      let categoriaAExportar = "";
+
+      function abrirSelectorDescarga(categoria) {
+          if(dataFiltrada.length === 0 || !dataFiltrada[0].raw) {
+              alert("No hay datos cargados para exportar."); return;
+          }
+
+          categoriaAExportar = categoria;
+          document.getElementById('titulo-modal-descarga').innerText = "Exportar: " + (categoria === 'Todas' ? "Todo el filtro" : categoria);
+          
+          // Extraemos TODOS los nombres de columnas de la hoja
+          let todosLosCampos = Object.keys(dataFiltrada[0].raw);
+          let htmlChecks = "";
+
+          todosLosCampos.forEach(campo => {
+              let esMandatorio = campo.toLowerCase().includes("numero") || campo.toLowerCase().includes("situacion");
+              let props = esMandatorio ? "checked onclick='return false;' style='opacity:0.6;'" : "";
+              
+              htmlChecks += `
+              <label style="display: flex; align-items: center; gap: 5px; font-size: 0.85rem; padding: 4px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; background: ${esMandatorio ? '#e9ecef' : 'white'};">
+                  <input type="checkbox" class="chk-excel-carta" value="${campo}" ${props}>
+                  <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${campo}">${campo}</span>
+              </label>`;
+          });
+
+          document.getElementById('lista-campos-descarga').innerHTML = htmlChecks;
+          document.getElementById('modal-descarga').style.display = 'flex';
+      }
+
+      function ejecutarDescargaPersonalizada() {
+          if(typeof XLSX === 'undefined') { alert("Motor Excel cargando..."); return; }
+
+          let seleccionados = [];
+          document.querySelectorAll('.chk-excel-carta:checked').forEach(chk => seleccionados.push(chk.value));
+          if(seleccionados.length === 0) { alert("Selecciona al menos un campo."); return; }
+
+          let datosListos = [];
+          dataFiltrada.forEach(item => {
+              let valNum = (item.numero || "").toString().trim().toLowerCase();
+              let entraEnReporte = false;
+
+              if (categoriaAExportar === "Todas") entraEnReporte = true;
+              else if (categoriaAExportar === "Navegando" && valNum === "navegando") entraEnReporte = true;
+              else if (categoriaAExportar === "Demanda" && valNum === "demanda") entraEnReporte = true;
+              else if (categoriaAExportar === "Retiro" && valNum === "retiro") entraEnReporte = true;
+              else if (categoriaAExportar === "Construcción" && (valNum === "construccion" || valNum === "construcción")) entraEnReporte = true;
+
+              if (entraEnReporte && item.raw) {
+                  let filaLimpia = {};
+                  seleccionados.forEach(col => {
+                      filaLimpia[col] = item.raw[col] || "";
+                  });
+                  datosListos.push(filaLimpia);
+              }
+          });
+
+          if(datosListos.length === 0) { alert("No hay datos en esta categoría para exportar."); return; }
+
+          const ws = XLSX.utils.json_to_sheet(datosListos);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Reporte");
+          XLSX.writeFile(wb, "Reporte_" + categoriaAExportar + ".xlsx");
+          
+          document.getElementById('modal-descarga').style.display = 'none';
+      }
 </script>
 </body>
 </html>
