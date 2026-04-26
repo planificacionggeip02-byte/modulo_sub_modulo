@@ -1,0 +1,776 @@
+/* ============================================================
+📁 style.html
+Estilos globales de la interfaz Consolidado GPON - GGEIP
+============================================================ */
+
+/* 🎨 Paleta de colores y variables globales */
+:root {
+  --color-primary: #0b1839;   /* Azul principal del sidebar */
+  --color-secondary: #FF00FF; /* Magenta */
+  --color-light: #E8F4F8;     /* Fondo claro general */
+  --color-hover: rgba(255,255,255,0.15); /* Hover en menú */
+  --color-active: #5DADE2;    /* Color activo en menú */
+  --color-card: #FAFBFC;      /* Fondo de tarjetas */
+  --text-color: #2E86AB;      /* Color principal de texto */
+  --field-border-default: rgba(0,0,0,0.12);
+  --field-border-focus: var(--color-primary);
+  --input-bg: #ffffff;        /* fondo claro para inputs/selects */
+  --control-radius: 8px;
+  --form-gap: 12px;
+}
+
+/* 🔧 Reset y tipografía */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background: var(--color-light);
+  height: 100vh;
+  overflow: hidden;
+  color: #0a2240;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+}
+
+/* ============================
+📐 Sidebar (menú lateral)
+============================ */
+.sidebar {
+  width: 250px;                          /* ancho fijo */
+  background: var(--color-primary);      /* color principal */
+  color: white;
+  flex-shrink: 0;
+  overflow-y: auto;                      /* scroll solo si es necesario */
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+
+  display: flex;                         /* 👈 convierte en flex container */
+  flex-direction: column;                /* 👈 apila hijos verticalmente */
+  height: 100vh;                         /* 👈 ocupa toda la altura de la ventana */
+}
+
+.sidebar-header {
+  padding: 16px;                          /* antes 20px → más compacto */
+  background: var(--color-secondary);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  text-align: center;
+}
+
+.sidebar-header h1 {
+  font-size: 1.1rem;                      /* antes 1.2rem → más compacto */
+  font-weight: 600;
+}
+
+/* ============================
+📐 Menú principal
+============================ */
+.nav-menu {
+  list-style: none;
+  padding: 10px 0;                        /* antes 20px → reduce espacio vertical */
+}
+
+.nav-item {
+  margin: 2px 12px;                       /* antes 5px 15px → más compacto */
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;                      /* antes 12px 15px → reduce altura */
+  color: rgba(255,255,255,0.85);
+  text-decoration: none;
+  border-radius: 6px;                     /* antes 8px → más ajustado */
+  transition: all 0.3s ease;
+  cursor: pointer;
+  font-size: 0.9rem;                      /* antes 0.95rem → más compacto */
+  font-weight: 500;
+}
+
+.nav-icon {
+  margin-right: 6px;                      /* antes 10px → ícono más cercano al texto */
+  font-size: 1rem;                        /* antes 1.1rem → más compacto */
+  width: 18px;                            /* antes 20px → reduce ancho reservado */
+  text-align: center;
+}
+
+.nav-link:hover {
+  background: none;   /* elimina el fondo */
+  transform: translateX(5px);
+  color: white;
+}
+
+/* ============================
+📐 Footer del sidebar (© 2025 Consolidado GPON - GGEIP )
+============================ */
+.sidebar-footer {
+  margin-top: auto;
+  text-align: center;
+  font-size: 0.75rem;
+  padding: 8px;
+  background: var(--color-secondary); /* 👈 usa el color secundario */
+  color: #fff; /* 👈 opcional: texto blanco para contraste */
+}
+
+/* ============================
+📐 Main content
+============================ */
+.main-content {
+  flex: 1;
+  background: var(--color-card);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-header {
+  background: white;
+  padding: 16px 24px;                     /* antes 20px 30px → más compacto */
+  border-bottom: 1px solid #e9ecef;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.content-header h2 {
+  color: var(--color-primary);
+  font-size: 1.4rem;                      /* antes 1.5rem → más compacto */
+  font-weight: 600;
+}
+
+.content-body {
+  padding: 24px;                          /* antes 30px → más compacto */
+}
+
+/* ============================
+📐 Tabs
+============================ */
+.tab-content {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================
+📐 Cards
+============================ */
+.card {
+  background: white;
+  border-radius: 10px;                    /* antes 12px → más compacto */
+  box-shadow: 0 4px 6px rgba(0,0,0,0.06);
+  border: 1px solid #E5F2F7;
+  margin-bottom: 16px;                    /* antes 20px → reduce espacio */
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 16px;                          /* antes 20px → más compacto */
+  background: #F0F8FC;
+  border-bottom: 1px solid #E5F2F7;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.card-body {
+  padding: 20px;                          /* antes 25px → más compacto */
+}
+
+/* ============================
+📐 Responsive
+============================ */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: -100%;
+    transition: left 0.3s ease;
+  }
+  .sidebar.open {
+    left: 0;
+  }
+  .main-content {
+    width: 100%;
+  }
+}
+
+/* ============================
+🎨 Estilos Menú lateral
+============================ */
+
+/* Flecha de expansión */
+.nav-arrow {
+  margin-left: auto;
+  font-size: 0.9rem;        /* más grande que 0.9rem */
+  font-weight: bold;        /* en negrita */
+  color:  ;              /* blanco */
+  transform: scaleX(1.5);     /* estira horizontalmente, más ancho */
+  transition: transform 0.3s ease;
+}
+
+/* Submenús ocultos por defecto */
+.sub-menu {
+  list-style: none;
+  padding-left: 35px;
+  margin-top: 5px;
+  display: none;
+}
+
+.nav-item.open .sub-menu {
+  display: block;
+}
+
+.nav-item.open .nav-arrow {
+  transform: rotate(90deg);
+}
+
+/* Submódulos */
+.sub-menu li {
+  padding: 8px 0;
+  color: rgba(255,255,255,0.75);
+  cursor: pointer;
+  transition: color 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.sub-menu li:hover {
+  color: white;
+  text-decoration: underline;
+}
+
+/* ============================
+📐 Viñetas en submenús
+============================ */
+.sub-menu li::before {
+  content: "►";                 /* símbolo sin fondo */
+  margin-right: 6px;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.9rem;
+  background: none !important; /* fuerza eliminar fondo */
+  display: inline;
+}
+
+/* ============================
+🎨 Ajuste visual: negrita en menús principales
+============================ */
+.nav-link .nav-text {
+  font-weight: 600;
+}
+
+/* ============================
+👤 Estilos de bloque de usuario en menú lateral
+============================ */
+.user-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.user-name {
+  font-weight: 600;
+  color: white;
+  font-size: 0.95rem;
+}
+
+.user-role {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.7);
+}
+
+/* ============================
+📐 Formularios (inputs, selects, radios, botones)
+Uniformes en todos los submódulos
+============================ */
+
+/* Contenedor del formulario: mantengo la .form por compatibilidad con otros formularios */
+.form {
+  display: grid;
+  gap: 12px; /* separación entre grupos */
+  grid-template-columns: repeat(2, 1fr); /* 2 columnas por defecto */
+  font-size: 14px;
+  color: var(--color-primary);
+}
+
+/* Variable para controlar fácilmente el grosor de las etiquetas (negrita) */
+:root {
+  --label-weight: 600; /* cambiar aquí para ajustar el 'negrito' de todos los labels (400,500,600,700) */
+}
+
+/* Muchos submódulos generan HTML con .campo o .form-group.
+   Normalizamos ambos pero SIN forzar que cada .campo ocupe toda la fila. */
+.form-group,
+.campo {
+  display: flex;           /* usar flex para que label + control queden en columna */
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+
+  /* Posicionamiento relativo para permitir colocar el validador (✔/❌) junto al título */
+  position: relative;
+  padding-right: 44px; /* espacio a la derecha para el icono validador */
+}
+
+/* Etiquetas en azul institucional (uniforme) */
+.form-group label,
+.campo label,
+.campo .label {
+  font-weight: var(--label-weight);
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  display: inline-block;
+}
+
+/* BLOQUES (fieldsets) que agrupan campos: esto es lo que controla 2-3 columnas.
+   Reglas aplican globalmente a los nombres de clase que usas en JS (.bloque-*) */
+.bloque-personal,
+.bloque-cliente,
+.bloque-servicio {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  gap: 12px !important;
+  align-items: start;
+  width: 100%;
+}
+
+/* Cada .campo se considera un grid-item del fieldset y se adapta al espacio disponible.
+   Aseguramos que no haya reglas previas que lo obliguen a ocupar 100% fuera del grid. */
+.bloque-personal > .campo,
+.bloque-cliente > .campo,
+.bloque-servicio > .campo {
+  width: 100%;
+  margin: 0;
+}
+
+/* Controles (inputs/selects/textareas): fondo blanco, borde sutil y foco azul.
+   Mantengo selectores amplios para cubrir la mayoría de markups dinámicos. */
+.campo input[type="text"],
+.campo input[type="email"],
+.campo input[type="date"],
+.campo input[inputmode],
+.campo input[type="number"],
+.campo select,
+.campo textarea,
+.form input[type="text"],
+.form select,
+.form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--control-radius);
+  border: 1px solid var(--field-border-default);
+  background: var(--input-bg);
+  color: #0a2240;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .12s ease, box-shadow .12s ease;
+}
+
+/* Focus: azul institucional */
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 4px rgba(46,134,171,0.06);
+}
+
+/* ============================
+  1) TELEFONO: INTEGRAR COD + 7 dígitos visualmente en un solo control
+     - el wrapper .telefono-group tendrá el borde y border-radius
+     - el select y el input internos quedarán sin borde para crear un único control visual
+============================ */
+
+/* TELEFONO: grupo inline (select COD + input) debe ocupar UNA sola celda en la grid,
+   y dentro de esa celda disponer los controles en fila. */
+.telefono-group {
+  display: flex;
+  gap: 0;
+  align-items: center;
+
+  /* wrapper con borde común para parecer un único input */
+  border: 1px solid rgba(46,134,171,0.12);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--input-bg);
+}
+
+/* Tamaños para COD y número dentro de .telefono-group (ahora integrados) */
+.telefono-group select {
+  flex: 0 0 110px;
+  max-width: 140px;
+  min-width: 90px;
+  padding: 8px 10px;
+  border: none; /* eliminado borde del select para unificar visualmente */
+  background: transparent;
+  color: #0a2240;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.telefono-group input {
+  flex: 1 1 auto;
+  padding: 8px 10px;
+  border: none; /* eliminado borde del input para unificar visualmente */
+  background: transparent;
+  color: #0a2240;
+}
+
+/* Si el input dentro del wrapper tiene foco, destacar el borde del wrapper */
+.telefono-group input:focus,
+.telefono-group select:focus {
+  outline: none;
+  box-shadow: none;
+}
+.telefono-group:focus-within {
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 4px rgba(46,134,171,0.06);
+}
+
+/* RIF y grupos similares inline */
+.rif-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ============================
+  2) VALIDADORES /* Validadores pequeños (globales, aplican a todos los submódulos) */
+============================ */
+
+.campo .estado,
+.form-group .estado {
+  /* width: 18px; */
+  /* height: 18px; */
+  /* border-radius: 50%; */
+  /* display: inline-flex; */
+  /* align-items: center; */
+  /* justify-content: center; */
+  /* position: absolute; */
+  /* top: 8px; */
+  /* right: 10px; */
+  /* font-size: 12px; */
+  /* color: transparent; */ /* el icono lo ponemos con ::after */
+}
+
+.campo .estado,
+.form-group .estado {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #b00020;
+}
+
+/* Verde moderno (válido) */
+.campo .estado.valido {
+  background: #28a745 !important;
+}
+.campo .estado.valido::after {
+  content: "✓";
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* Rojo (inválido) */
+.campo .estado.invalido {
+  background: #b00020 !important;
+}
+.campo .estado.invalido::after {
+  content: "✕";
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* Telefonos: borde del wrapper cuando está marcado como válido/ inválido */
+/* ELIMINAR ESTE COMENTARIO PARA ACTIVAR VALIDADOR
+.telefono-group.valido { 
+  border-color: #28a745 !important; 
+  box-shadow: 0 0 0 4px rgba(40,167,69,0.06); 
+}
+
+.telefono-group.invalido { 
+  border-color: #b00020 !important; 
+  box-shadow: 0 0 0 4px rgba(176,0,32,0.06); 
+}
+*/ELIMINAR ESTE COMENTARIO PARA ACTIVAR VALIDADOR
+
+/* Toasts globales (si quieres personalizar) */
+.cd-toast {
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Forzar fondo blanco en selects/inputs si algún navegador los pinta grises */
+.campo input, .campo select, .campo textarea {
+  background: #fff !important;
+}
+
+/* Mantener labels en azul institucional */
+.campo label, .form-group label, legend { color: var(--color-primary) !important; }
+
+
+/* ============================
+  Radios: estilo uniforme y color institucional al seleccionar
+============================ */
+.radio-group { display:flex; gap:16px; align-items:center; }
+.radio-group label { display:inline-flex; align-items:center; gap:8px; cursor:pointer; color:#0a2240; }
+.radio-group input[type="radio"] { display:none; }
+.radio-ui {
+  width:18px; height:18px; border-radius:50%; border:2px solid rgba(46,134,171,0.35);
+  display:inline-flex; align-items:center; justify-content:center; transition:all .12s;
+}
+.radio-group input[type="radio"]:checked + .radio-ui {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(46,134,171,0.12);
+}
+.radio-group input[type="radio"]:checked + .radio-ui::after {
+  content:""; width:8px; height:8px; background:var(--color-primary); border-radius:50%;
+}
+
+/* Botón principal: centrado y compacto */
+.btn-primary,
+form button[type="submit"],
+button.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  padding: 8px 14px;
+  min-width: 140px;
+  margin: 12px auto 0 auto;
+  display: block;
+  border-radius: 8px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.form-buttons .btn {
+  margin: 0;
+}
+
+/* Mensajes */
+.help { font-size:12px; color:#666; }
+.error { font-size:12px; color:#b00020; }
+
+/* Responsive: en pantalla pequeña 1 columna */
+@media (max-width: 900px) {
+  .bloque-personal,
+  .bloque-cliente,
+  .bloque-servicio { grid-template-columns: 1fr !important; }
+}
+
+/* ============================
+🧭 Franja superior fija
+============================ */
+.top-header {
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-width, 250px); /* ❌ esto hace que la barra azul empiece DESPUÉS del sidebar */
+  right: 0;
+  height: 56px;
+  background: var(--color-primary);
+  border-bottom: 1px solid #e5e7eb;
+  z-index: 50;
+}
+
+.top-header-inner {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 22px;
+}
+
+/* El contenido principal se empuja debajo de la franja fija */
+.main-content {
+  padding-top: 56px; /* altura de la franja blanca fija */
+}
+
+/* ============================
+🖼️ Imagen de fondo inicial
+============================ */
+.imagen-fondo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  font-size: 2rem;
+  color: rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+/* ============================
+🖼️ Franja Nombre SubModulo
+============================ */
+.submodulo-titulo {
+  background-color: var(--color-secondary); /* Color Magenta */
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* ============================
+🖼️ loarder *Cargando*
+============================ */
+.loader-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(255,255,255,0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  font-family: sans-serif;
+  color: #444;
+}
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 6px solid #ccc;
+  border-top-color: var(--color-primary, #007bff);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Estado prístino: no mostrar bordes de error por :invalid */
+form.pristine input:invalid,
+form.pristine select:invalid,
+form.pristine textarea:invalid {
+  border-color: var(--input-border-default, #ccc) !important;
+  box-shadow: none !important;
+}
+
+/* Al iniciar validación, remueve la clase 'pristine' desde tu validador */
+
+/* ============================
+📌 Contenedor de cada campo
+============================ */
+.campo {
+  width: 100%;
+  display: block;
+  margin-bottom: 12px;
+}
+
+/* ============================
+📌 Campo que debe ocupar TODA la fila
+============================ */
+.campo-full {
+  grid-column: 1 / -1;   /* ✅ Ocupa todo el ancho del fieldset */
+  width: 100%;
+}
+
+/* ============================
+🖼️ Campo "Observaciones"
+============================ */
+.input-textarea {
+  width: 100%;               /* ✅ Se expande horizontalmente */
+  box-sizing: border-box;    /* ✅ Padding no rompe el layout */
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  resize: none;              /* ✅ Elimina el triángulo de resize */
+  height: 120px;             /* ✅ Altura fija, profesional */
+  margin-top: 8px;           /* ✅ Separación visual del campo anterior */
+}
+
+/* ============================
+🔢 Contador de caracteres
+============================ */
+.contador-caracteres {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  text-align: left;
+}
+
+.campo .estado {
+  color: #b00020 !important;
+}
+
+.campo .estado.invalido {
+  color: #fff !important;
+}
+
+/* ============================================================
+🔘 BOTONES: EFECTO DE PULSACIÓN "ESPEJO" (IGUAL PARA AMBOS)
+============================================================ */
+/* 1. Base: Aseguramos que ambos tengan la misma transición */
+#btn-enviar-demanda, 
+#btn-limpiar-demanda, 
+.btn-enviar-demanda, 
+.btn-limpiar-demanda,
+.btn-submit, 
+.btn-clear,
+button[type="button"],
+button[type="submit"] {
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
+}
+
+/* 2. EFECTO AL PRESIONAR: Escala 0.90 y sombra interna idéntica */
+#btn-enviar-demanda:active, 
+#btn-limpiar-demanda:active, 
+.btn-enviar-demanda:active, 
+.btn-limpiar-demanda:active,
+.btn-submit:active, 
+.btn-clear:active,
+button:active {
+  transform: scale(0.90) !important; /* Se encogen un 10% parejo */
+  filter: brightness(0.75) !important; /* Se oscurecen igual */
+  box-shadow: inset 0 8px 15px rgba(0,0,0,0.4) !important; /* Sombra de hundido profundo */
+}
+
+/* 3. Evitar que se muevan si están deshabilitados */
+button:disabled {
+  transform: none !important;
+  filter: grayscale(1) !important;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
