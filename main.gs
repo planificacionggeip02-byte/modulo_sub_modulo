@@ -367,21 +367,21 @@ function buscarClientePorRIF(rifBuscado) {
  */
 function getVentasDashData() {
   try {
-    // 1. CONEXIÓN A LA HOJA
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID); // Asegúrate de que SPREADSHEET_ID esté en tu config
-    const sheet = ss.getSheetByName(SHEET_NAME); // O el nombre exacto de tu hoja de Demandas
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName(SHEET_NAME);
     
     if (!sheet) return { ok: false, error: "Hoja de Demandas no encontrada" };
 
     const data = sheet.getDataRange().getValues();
     if (data.length < 2) return { ok: true, records: [] };
 
-    // 2. NORMALIZACIÓN DE ENCABEZADOS (Para evitar errores por mayúsculas o espacios)
-    const headers = data[0].map(h => (h || "").toString().trim().toLowerCase()
+    // Capturamos los encabezados originales para el Excel "a la carta"
+    const headersOriginales = data[0].map(h => (h || "").toString().trim());
+    
+    // Normalización para el motor del dashboard
+    const headers = headersOriginales.map(h => h.toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_]/g, ""));
 
-    // 3. MAPEO EXACTO DE LOS 8 CAMPOS (Basado en tu instrucción)
-    // Busca el índice (número de columna) de cada campo.
     const idx = {
       numero: headers.indexOf("numero"),
       region: headers.indexOf("region"),
@@ -390,22 +390,29 @@ function getVentasDashData() {
       sector: headers.indexOf("sector"),
       situacion: headers.indexOf("situacionabordaje"),
       mes: headers.indexOf("mesabordaje"),
-      ano: headers.indexOf("anoabordaje") // "año" se normaliza a "ano"
+      ano: headers.indexOf("anoabordaje")
     };
 
-    // 4. EXTRACCIÓN Y LIMPIEZA DE FILAS
-    const records = data.slice(1).map(row => ({
-      numero: row[idx.numero] || "N/A",
-      region: row[idx.region] || "N/A",
-      estado: row[idx.estado] || "N/A",
-      huella: row[idx.huella] || "N/A",
-      sector: row[idx.sector] || "N/A",
-      situacion: row[idx.situacion] || "N/A",
-      mes: row[idx.mes] || "N/A",
-      ano: row[idx.ano] || "N/A"
-    }));
+    const records = data.slice(1).map(row => {
+      // --- NUEVO: Creamos el objeto 'raw' con todos los campos de la fila ---
+      let rawObj = {};
+      headersOriginales.forEach((h, i) => {
+        rawObj[h] = row[i] !== undefined ? row[i] : "";
+      });
 
-    // 5. RETORNO AL FRONTEND
+      return {
+        numero: row[idx.numero] || "N/A",
+        region: row[idx.region] || "N/A",
+        estado: row[idx.estado] || "N/A",
+        huella: row[idx.huella] || "N/A",
+        sector: row[idx.sector] || "N/A",
+        situacion: row[idx.situacion] || "N/A",
+        mes: row[idx.mes] || "N/A",
+        ano: row[idx.ano] || "N/A",
+        raw: rawObj // <--- IMPORTANTE: Aquí viaja toda la fila
+      };
+    });
+
     return { ok: true, records: records };
 
   } catch (error) {
