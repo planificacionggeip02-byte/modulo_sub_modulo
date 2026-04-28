@@ -351,7 +351,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a2b4c; padding-bottom: 10px; margin-bottom: 15px;">
             <h3 style="margin: 0; color: #1a2b4c;">Resumen Global de Situaciones Actuales</h3>
             <div>
-                <button onclick="abrirSelectorDescarga('Todas')" style="background: #107c41; color: white; border: none; padding: 8px 15px; cursor: pointer; font-weight: bold; border-radius: 4px; margin-right: 15px;">📊 Descargar Todo</button>
+                <button onclick="ejecutarDescargaDirecta('Todas')" style="background: #107c41; color: white; border: none; padding: 8px 15px; cursor: pointer; font-weight: bold; border-radius: 4px; margin-right: 15px;">📊 Descargar Todo</button>
                 <button onclick="document.getElementById('modal-resumen').style.display='none'" style="background: #dc3545; color: white; border: none; padding: 8px 15px; cursor: pointer; font-weight: bold; border-radius: 4px;">X Cerrar</button>
             </div>
         </div>
@@ -684,7 +684,7 @@
 
   cargarDataOriginal();
 
-    function actualizarTablaODN() {
+function actualizarTablaODN() {
         let grupos = {};
         let globales = {
             navegando: { total: 0, detalle: {} },
@@ -722,17 +722,22 @@
             else if(valNum === "construcción" || valNum === "construccion") sumarCruce(grupos[llave], globales, 'construccion');
         });
 
-        // --- ACTUALIZAR TOTALES EN LOS TÍTULOS (Parentesis) ---
-        if(document.getElementById('th-navegando')) document.getElementById('th-navegando').innerHTML = `NAVEGANDO<br>(${formatoMiles(globales.navegando.total)})`;
-        if(document.getElementById('th-demanda')) document.getElementById('th-demanda').innerHTML = `DEMANDA<br>(${formatoMiles(globales.demanda.total)})`;
-        if(document.getElementById('th-retiro')) document.getElementById('th-retiro').innerHTML = `RETIRO<br>(${formatoMiles(globales.retiro.total)})`;
-        if(document.getElementById('th-construccion')) document.getElementById('th-construccion').innerHTML = `CONSTRUCCIÓN<br>(${formatoMiles(globales.construccion.total)})`;
+        // --- ACTUALIZAR TOTALES EN LOS TÍTULOS ---
+        const actualizarTit = (id, txt, tot) => {
+            let el = document.getElementById(id);
+            if(el) el.innerHTML = `${txt}<br>(${formatoMiles(tot)})`;
+        };
+        actualizarTit('th-navegando', 'NAVEGANDO', globales.navegando.total);
+        actualizarTit('th-demanda', 'DEMANDA', globales.demanda.total);
+        actualizarTit('th-retiro', 'RETIRO', globales.retiro.total);
+        actualizarTit('th-construccion', 'CONSTRUCCIÓN', globales.construccion.total);
+        
         if(document.getElementById('th-total')) {
             let granTotal = globales.navegando.total + globales.demanda.total + globales.retiro.total + globales.construccion.total;
             document.getElementById('th-total').innerHTML = `TOTAL SERVICIOS<br>(${formatoMiles(granTotal)})`;
         }
 
-        // --- FUNCIÓN PARA EL SUBRAYADO CON POP-UP (MEJORADA) ---
+        // --- FUNCIÓN PARA POP-UP (Hover) ---
         const crearSubrayado = (total, detalleObj) => {
             if (total === 0) return "0";
             let listaHtml = "";
@@ -773,145 +778,87 @@
         });
         document.getElementById('body-tabla-odn').innerHTML = htmlBody;
 
-    // DIBUJAR DETALLE GLOBAL (4 COLUMNAS CON BOTÓN) ---
-            const armarColumnaGlobal = (titulo, objCategoria, idCat) => {
-                let itemsHtml = "";
-                let desglose = Object.entries(objCategoria.detalle).sort((a, b) => b[1] - a[1]);
-                
-                desglose.forEach(([situacion, cantidad]) => {
-                    itemsHtml += `
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 5px 0; font-size: 0.75rem;">
-                        <span style="color: #555; padding-right: 5px;">${situacion}</span>
-                        <strong style="color: #1a2b4c;">${formatoMiles(cantidad)}</strong>
-                    </div>`;
-                });
-
-                return `
-                <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #ddd; display: flex; flex-direction: column; min-width: 0;">
-                    <h5 style="margin: 0 0 10px 0; color: white; background: #1a2b4c; text-align: center; padding: 5px; border-radius: 3px; font-size: 0.8rem; line-height: 1.2;">
-                        ${titulo.toUpperCase()}<br>(${formatoMiles(objCategoria.total)})
-                    </h5>
-                    
-                    <button onclick="abrirSelectorDescarga('${idCat}')" style="margin-bottom: 10px; padding: 5px; background-color: #107c41; color: white; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 0.75rem;">
-                        📊 Descargar
-                    </button>
-
-                    <div style="flex-grow: 1; overflow-y: auto; max-height: 350px;">
-                        ${itemsHtml}
-                    </div>
+        // --- DIBUJAR DETALLE GLOBAL (MODAL) ---
+        const armarColumnaGlobal = (titulo, objCategoria, idCat) => {
+            let itemsHtml = "";
+            let desglose = Object.entries(objCategoria.detalle).sort((a, b) => b[1] - a[1]);
+            
+            desglose.forEach(([sit, cant]) => {
+                itemsHtml += `
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 5px 0; font-size: 0.75rem;">
+                    <span style="color: #555; padding-right: 5px;">${sit}</span>
+                    <strong style="color: #1a2b4c;">${formatoMiles(cant)}</strong>
                 </div>`;
-            };
+            });
 
-            // Inyectamos las 4 columnas pasando el nombre de la categoría como tercer parámetro
-            document.getElementById('contenido-modal-resumen').innerHTML = 
-                    armarColumnaGlobal("Navegando", globales.navegando, "Navegando") +
-                    armarColumnaGlobal("Demanda", globales.demanda, "Demanda") +
-                    armarColumnaGlobal("Retiro", globales.retiro, "Retiro") +
-                    armarColumnaGlobal("Construcción", globales.construccion, "Construcción");
+            return `
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #ddd; display: flex; flex-direction: column; min-width: 0;">
+                <h5 style="margin: 0 0 10px 0; color: white; background: #1a2b4c; text-align: center; padding: 5px; border-radius: 3px; font-size: 0.8rem; line-height: 1.2;">
+                    ${titulo.toUpperCase()}<br>(${formatoMiles(objCategoria.total)})
+                </h5>
+                
+                <button onclick="ejecutarDescargaDirecta('${idCat}')" style="margin-bottom: 10px; padding: 5px; background-color: #107c41; color: white; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 0.75rem; width: 100%;">
+                    📊 Descargar ${titulo}
+                </button>
 
-            document.getElementById('fecha-actualizacion').textContent = "Info al: " + new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
-        }
+                <div style="flex-grow: 1; overflow-y: auto; max-height: 350px;">
+                    ${itemsHtml}
+                </div>
+            </div>`;
+        };
 
-    // ==========================================
-    // FUNCIÓN DE DESCARGA EXCEL (FORMATO PROFESIONAL .XLSX)
-    // ==========================================
+        document.getElementById('contenido-modal-resumen').innerHTML = 
+                armarColumnaGlobal("Navegando", globales.navegando, "Navegando") +
+                armarColumnaGlobal("Demanda", globales.demanda, "Demanda") +
+                armarColumnaGlobal("Retiro", globales.retiro, "Retiro") +
+                armarColumnaGlobal("Construcción", globales.construccion, "Construcción");
+
+        document.getElementById('fecha-actualizacion').textContent = "Info al: " + new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+    }
+
+    // --- FUNCIÓN DE DESCARGA TABLA PRINCIPAL ---
     function descargarExcel() {
-        if(typeof XLSX === 'undefined') {
-            alert("El motor de Excel aún está cargando. Espera un segundo.");
-            return;
-        }
-
+        if(typeof XLSX === 'undefined') { alert("Motor Excel cargando..."); return; }
         let tablaOriginal = document.getElementById("tabla-odn");
         if(!tablaOriginal) return;
-
-        // Clonamos la tabla para limpiarla antes de exportar
         let tablaClon = tablaOriginal.cloneNode(true);
-
-        // Eliminamos todos los divs de detalle para que el Excel solo tenga el número limpio
-        let celdasInteractivas = tablaClon.querySelectorAll("td");
-        celdasInteractivas.forEach(td => {
-            let spanNumero = td.querySelector("span");
-            if(spanNumero) {
-                let numeroLimpio = spanNumero.innerText.replace(/\./g, ''); // Quitamos puntos para que Excel lo vea como número
-                td.innerText = numeroLimpio;
-            }
+        let celdas = tablaClon.querySelectorAll("td");
+        celdas.forEach(td => {
+            let span = td.querySelector("span");
+            if(span) td.innerText = span.innerText.replace(/\./g, ''); 
         });
-
-        // Crear el libro de Excel
         let wb = XLSX.utils.table_to_book(tablaClon, {sheet: "Resumen_Ventas"});
-        
-        // Descargar con nombre profesional
         XLSX.writeFile(wb, "Reporte_Situacion_Actual_Ventas.xlsx");
     }
 
-      // ==========================================
-      // SISTEMA DE EXCEL "A LA CARTA"
-      // ==========================================
-      let categoriaAExportar = "";
+    // --- FUNCIÓN DE DESCARGA DIRECTA (28 CAMPOS) ---
+    function ejecutarDescargaDirecta(categoria) {
+        if(typeof XLSX === 'undefined') { alert("Motor Excel cargando..."); return; }
+        let dataParaExportar = [];
+        dataFiltrada.forEach(item => {
+            let valNum = (item.numero || "").toString().trim().toLowerCase();
+            let esNavegando = (valNum === "navegando");
+            let esDemanda = (valNum === "demanda");
+            let esRetiro = (valNum === "retiro");
+            let esConstruccion = (valNum === "construcción" || valNum === "construccion");
+            
+            let cumple = false;
+            if (categoria === 'Todas') {
+                if (esNavegando || esDemanda || esRetiro || esConstruccion) cumple = true;
+            } else if (categoria === 'Navegando' && esNavegando) cumple = true;
+            else if (categoria === 'Demanda' && esDemanda) cumple = true;
+            else if (categoria === 'Retiro' && esRetiro) cumple = true;
+            else if (categoria === 'Construcción' && esConstruccion) cumple = true;
 
-      function abrirSelectorDescarga(categoria) {
-          if(dataFiltrada.length === 0 || !dataFiltrada[0].raw) {
-              alert("No hay datos cargados para exportar."); return;
-          }
+            if(cumple && item.raw) dataParaExportar.push(item.raw); 
+        });
 
-          categoriaAExportar = categoria;
-          document.getElementById('titulo-modal-descarga').innerText = "Exportar: " + (categoria === 'Todas' ? "Todo el filtro" : categoria);
-          
-          // Extraemos TODOS los nombres de columnas de la hoja
-          let todosLosCampos = Object.keys(dataFiltrada[0].raw);
-          let htmlChecks = "";
-
-          todosLosCampos.forEach(campo => {
-              let esMandatorio = campo.toLowerCase().includes("numero") || campo.toLowerCase().includes("situacion");
-              let props = esMandatorio ? "checked onclick='return false;' style='opacity:0.6;'" : "";
-              
-              htmlChecks += `
-              <label style="display: flex; align-items: center; gap: 5px; font-size: 0.85rem; padding: 4px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; background: ${esMandatorio ? '#e9ecef' : 'white'};">
-                  <input type="checkbox" class="chk-excel-carta" value="${campo}" ${props}>
-                  <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${campo}">${campo}</span>
-              </label>`;
-          });
-
-          document.getElementById('lista-campos-descarga').innerHTML = htmlChecks;
-          document.getElementById('modal-descarga').style.display = 'flex';
-      }
-
-      function ejecutarDescargaPersonalizada() {
-          if(typeof XLSX === 'undefined') { alert("Motor Excel cargando..."); return; }
-
-          let seleccionados = [];
-          document.querySelectorAll('.chk-excel-carta:checked').forEach(chk => seleccionados.push(chk.value));
-          if(seleccionados.length === 0) { alert("Selecciona al menos un campo."); return; }
-
-          let datosListos = [];
-          dataFiltrada.forEach(item => {
-              let valNum = (item.numero || "").toString().trim().toLowerCase();
-              let entraEnReporte = false;
-
-              if (categoriaAExportar === "Todas") entraEnReporte = true;
-              else if (categoriaAExportar === "Navegando" && valNum === "navegando") entraEnReporte = true;
-              else if (categoriaAExportar === "Demanda" && valNum === "demanda") entraEnReporte = true;
-              else if (categoriaAExportar === "Retiro" && valNum === "retiro") entraEnReporte = true;
-              else if (categoriaAExportar === "Construcción" && (valNum === "construccion" || valNum === "construcción")) entraEnReporte = true;
-
-              if (entraEnReporte && item.raw) {
-                  let filaLimpia = {};
-                  seleccionados.forEach(col => {
-                      filaLimpia[col] = item.raw[col] || "";
-                  });
-                  datosListos.push(filaLimpia);
-              }
-          });
-
-          if(datosListos.length === 0) { alert("No hay datos en esta categoría para exportar."); return; }
-
-          const ws = XLSX.utils.json_to_sheet(datosListos);
-          const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, "Reporte");
-          XLSX.writeFile(wb, "Reporte_" + categoriaAExportar + ".xlsx");
-          
-          document.getElementById('modal-descarga').style.display = 'none';
-      }
+        if(dataParaExportar.length === 0) { alert("No hay datos para esta categoría."); return; }
+        const ws = XLSX.utils.json_to_sheet(dataParaExportar);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Reporte_" + categoria);
+        XLSX.writeFile(wb, "Reporte_" + categoria + ".xlsx");
+    }
 </script>
 </body>
 </html>
