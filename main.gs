@@ -362,60 +362,76 @@ function buscarClientePorRIF(rifBuscado) {
 // =====================================================================================
 
 /**
- * Función para obtener la data cruda del Dashboard de Ventas.
+ * Función para obtener Resumen Global.
  * Extrae solo los 8 campos solicitados para mantener la velocidad.
  */
 function getVentasDashData() {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = ss.getSheetByName(SHEET_NAME);
-    
     if (!sheet) return { ok: false, error: "Hoja de Demandas no encontrada" };
 
-    const data = sheet.getDataRange().getValues();
+    const data = sheet.getDataRange().getDisplayValues(); 
     if (data.length < 2) return { ok: true, records: [] };
 
-    // Capturamos los encabezados originales para el Excel "a la carta"
     const headersOriginales = data[0].map(h => (h || "").toString().trim());
     
-    // Normalización para el motor del dashboard
-    const headers = headersOriginales.map(h => h.toLowerCase()
+    // Normalizamos para buscar los índices sin importar mayúsculas o acentos
+    const headersNorm = headersOriginales.map(h => h.toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_]/g, ""));
 
+    // --- MAPEO DE LOS 28 CAMPOS EXACTOS PARA EL EXCEL ---
+    const camposParaExcel = [
+      "Nombre Contacto", "Cédula", "Correo", "Teléfono", "Teléfono 2", "Teléfono 3",
+      "Cliente", "Rif", "Región", "Gerente Región", "Estado", "Municipio", "Huella",
+      "Sector", "Cono", "Central", "Contrato", "Sumaria", "Medio Abordaje",
+      "Situación Abordaje", "Oferta Entregada", "Oferta Aceptada", "Fecha Navegando",
+      "Número Servicio 700", "Situacion Actual", "Mes Abordaje", "Año Abordaje", "Retiro Sistema"
+    ];
+
+    // Buscamos los índices de esos 28 campos en tu Sheets
+    const mapeoExcel = camposParaExcel.map(nombre => {
+      let norm = nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_]/g, "");
+      return { nombreOriginal: nombre, index: headersNorm.indexOf(norm) };
+    });
+
+    // --- MAPEO DE LOS 8 CAMPOS LÓGICOS (DASHBOARD) ---
+    // Aquí es donde "traducimos" tus nombres de Sheets a los nombres del código JS
     const idx = {
-      numero: headers.indexOf("numero"),
-      region: headers.indexOf("region"),
-      estado: headers.indexOf("estado"),
-      huella: headers.indexOf("huella"),
-      sector: headers.indexOf("sector"),
-      situacion: headers.indexOf("situacionabordaje"),
-      mes: headers.indexOf("mesabordaje"),
-      ano: headers.indexOf("anoabordaje")
+      numero: headersNorm.indexOf("numero"), // Busca "Número" o "Numero"
+      region: headersNorm.indexOf("region"),
+      estado: headersNorm.indexOf("estado"),
+      huella: headersNorm.indexOf("huella"),
+      sector: headersNorm.indexOf("sector"),
+      situacion: headersNorm.indexOf("situacionactual"), // <--- OJO: Mapeado a Situacion Actual
+      mes: headersNorm.indexOf("mesabordaje"),
+      ano: headersNorm.indexOf("anoabordaje")
     };
 
-    const records = data.slice(1).map(row => {
-      // --- NUEVO: Creamos el objeto 'raw' con todos los campos de la fila ---
+    const records = data.slice(1).filter(row => row.join("").trim() !== "").map(row => {
+      // Creamos el objeto RAW con los 28 nombres exactos que pediste
       let rawObj = {};
-      headersOriginales.forEach((h, i) => {
-        rawObj[h] = row[i] !== undefined ? row[i] : "";
+      mapeoExcel.forEach(item => {
+        rawObj[item.nombreOriginal] = item.index >= 0 ? row[item.index] : "";
       });
 
       return {
-        numero: row[idx.numero] || "N/A",
-        region: row[idx.region] || "N/A",
-        estado: row[idx.estado] || "N/A",
-        huella: row[idx.huella] || "N/A",
-        sector: row[idx.sector] || "N/A",
-        situacion: row[idx.situacion] || "N/A",
-        mes: row[idx.mes] || "N/A",
-        ano: row[idx.ano] || "N/A",
-        raw: rawObj // <--- IMPORTANTE: Aquí viaja toda la fila
+        // Campos de lógica (Dashboard)
+        numero: idx.numero >= 0 ? row[idx.numero] : "N/A",
+        region: idx.region >= 0 ? row[idx.region] : "N/A",
+        estado: idx.estado >= 0 ? row[idx.estado] : "N/A",
+        huella: idx.huella >= 0 ? row[idx.huella] : "N/A",
+        sector: idx.sector >= 0 ? row[idx.sector] : "N/A",
+        situacion: idx.situacion >= 0 ? row[idx.situacion] : "N/A",
+        mes: idx.mes >= 0 ? row[idx.mes] : "N/A",
+        ano: idx.ano >= 0 ? row[idx.ano] : "N/A",
+        raw: rawObj // <--- Capa de datos pura para el Excel
       };
     });
 
     return { ok: true, records: records };
-
   } catch (error) {
     return { ok: false, error: error.message };
   }
 }
+
